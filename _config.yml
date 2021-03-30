@@ -1,0 +1,24 @@
+title: halley.fang 个人博客
+site_title: blog
+site_url: //halley.github.io/
+description: halley.fang 个人博客
+# paginate
+gems: [jekyll-paginate]
+paginate: 5
+paginate_path: "post-page/page:num"
+category_dir: category/
+tag_dir: tag/
+excerpt_separator: "\n\n\n\n"
+
+exclude:
+  - LICENSE.md
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - Rakefile
+markdown: kramdown
+kramdown:
+ input: GFM
+ auto_ids: true
+ hard_wrap: false
+ syntax_highlighter: highlightjs
