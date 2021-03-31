@@ -26,8 +26,8 @@ type: page
           </time>
           <a class="title" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
 
-          {% include common/category.html %}
-          {% include common/tag.html %}
+          {% include category.html %}
+          {% include tag.html %}
       </li>
     {% endfor %}
   {% endfor %}

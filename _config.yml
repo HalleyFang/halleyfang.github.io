@@ -2,8 +2,6 @@ title: halley.fang 个人博客
 site_title: blog
 site_url: //halley.github.io/
 description: halley.fang 个人博客
-# paginate
-gems: [jekyll-paginate]
 paginate: 5
 paginate_path: "post-page/page:num"
 category_dir: category/
@@ -22,3 +20,7 @@ kramdown:
  auto_ids: true
  hard_wrap: false
  syntax_highlighter: highlightjs
+
+github: HalleyFang
+email: qingyeliufeng@163.com
+qq: 458930591

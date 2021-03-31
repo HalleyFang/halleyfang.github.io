@@ -6,11 +6,15 @@
             {% if site.description_footer %} {{site.description_footer}} {% endif %}
         </p>
         <p class="contact">
-            Contact me at: {% if site.github_username %}
-            <a href="https://github.com/{{site.github_username}}" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a> {% endif %} {% if site.email %}
-            <a href="mailto:{{site.email}}" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a> {% endif %} {% if site.weibo_username %}
+            Contact me at: {% if site.github %}
+            <a href="https://github.com/{{site.github_username}}" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            {% endif %}
+            {% if site.email %}
+            <a href="mailto:{{site.email}}" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            {% endif %}
+            {% if site.qq %}
             <a href="http://wpa.qq.com/msgrd?v=3&uin=QQ号码&site=qq&menu=yes" target="_blank" class="qq_tell"><img src="/images/ZH/20140320/qq_tell.png" alt="QQ交谈"/>
-            <a href="http://weibo.com/{{site.weibo_username}}" title="Weibo"><i class="fa fa-weibo" aria-hidden="true"></i></a> {% endif %} {% if site.zhihu_username %}
+            {% endif %}
         </p>
         <p class="power">
             <span>
