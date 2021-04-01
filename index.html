@@ -10,6 +10,7 @@ title: Halley’s Blog
         <small>这里是halley.fang的个人博客站</small>
         <hr>
         <ul>
+          {% for post in paginator.posts %}
               <li>
                 <h2>
                   <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
@@ -42,6 +43,7 @@ title: Halley’s Blog
                 </div>
                 <hr>
               </li>
+              {% endfor %}
         </ul>
 
         <!-- Pagination links -->

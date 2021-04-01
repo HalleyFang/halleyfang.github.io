@@ -6,7 +6,7 @@
             color: #223253;
         }
     }
-    .left {
+    .my-main-content {
         >ul {
             padding: 0;
             >li {
@@ -77,7 +77,7 @@
             }
         }
     }
-    .right {
+    .my-sidebar {
         .wrap {
             .side {
                 margin-bottom: 20px;
@@ -151,7 +151,7 @@
 }
 @media screen and (max-width: 770px) {
     .page[index] {
-        .left>ul li {
+        .my-main-content>ul li {
             h2 {
                 font-size: 22px;
             }
