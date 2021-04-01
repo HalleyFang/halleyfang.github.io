@@ -19,18 +19,20 @@
   line-height: 30px;
   color: #fff;
 }
-.my-brand span, .my-brand img{
+.my-brand{
   float: left;
   vertical-align: middle;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #1f222B;
   margin: 0 12px;
-}
-.my-brand span{
-  line-height: 30px;
-  width: 150px;
+  img{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #1f222B;
+  }
+  span{
+    line-height: 30px;
+    width: 150px;
+  }
 }
 .my-topbar-item {
   display: block;
