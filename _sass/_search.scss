@@ -1,0 +1,112 @@
+.my-search-content{
+  position: fixed;
+  width: 600px;
+  right: -600px;
+  bottom: 0;
+  height: 100vh;
+  z-index: 9999;
+  display: none;
+  background: rgba(246, 246, 246, 1);
+  box-shadow:0 0 8px 0 rgba(0, 0, 0, .4);
+  transition: all 1s;
+  overflow-y: auto;
+}
+.my-search-content-header{
+  box-shadow: 0 2px 4px 0 #ddd;
+  padding: 10px 20px 0;
+  position: relative;
+  z-index: 22;
+}
+.my-search-content.opened{
+  top: 0;
+  right: 0;
+  display: block;
+  display: flex;
+  flex-direction: column;
+}
+.my-search-close{
+  font-size: 18px;
+  text-align: right;
+  padding: 8px;
+  cursor: pointer;
+}
+.my-search-title{
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+.my-search-input{
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border: 1px solid #373947;
+  background: #fff;
+  margin-bottom: 10px;
+}
+.my-search-input i{
+  font-size: 20px;
+  margin-right: 4px;
+  color: #ccc;
+}
+.my-search-input input{
+  flex: 1;
+  border: none;
+  outline: none;
+}
+.my-search-input button{
+  background: #373947;
+  border: none;
+  color: #fff;
+  height: 100%;
+  padding: 6px 16px;
+  margin: -6px;
+  outline: none;
+}
+.my-search-categories span{
+  display: inline-block;
+  padding: 12px 0 8px;
+  margin-right: 12px;
+  color: #888;
+  cursor: pointer;
+}
+.my-search-categories span.active{
+  color: #333;
+  border-bottom: 1px solid #333;
+}
+.my-search-results{
+  flex: 1 1 100%;
+  overflow-y: hidden;
+}
+.my-search-result-container{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+.my-search-result-container, .my-search-placeholder{
+  height: 100%;
+  text-align: center;
+  display: none;
+  background-color: #ffffff;
+}
+.my-search-placeholder{
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.my-search-results .active{
+  display: block;
+}
+.my-search-result{
+  padding: 20px;
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+  text-align: left;
+}
+.my-search-result:hover{
+  background: #eee;
+}
+.my-search-result em{
+  font-style: normal;
+  font-weight: 600;
+  color: #333;
+}

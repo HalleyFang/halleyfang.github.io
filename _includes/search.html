@@ -1,19 +1,19 @@
-<div class="dw-search-container">
-  <div class="dw-search-shade"></div>
-  <div class="dw-search-content">
-    <div class="dw-search-content-header">
-      <div class="dw-search-close">
+<div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
         <i class="fa fa-close"></i>
       </div>
-      <div class="dw-search-title">
+      <div class="my-search-title">
         全文搜索
       </div>
-      <div class="dw-search-input">
+      <div class="my-search-input">
         <i class="fa fa-search"></i>
         <input id="search-input" type="text">
         <button class="search-button">搜索</button>
       </div>
-      <div class="dw-search-categories">
+      <div class="my-search-categories">
         <span class="active">全部</span>
         {% for category in site.data.docs %}
         <span data-category="{{ category.name }}">
@@ -26,33 +26,33 @@
         {% endfor %}
       </div>
     </div>
-    <div class="dw-search-results">
-      <ul class="dw-search-result-container" id="results-container">
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
       </ul>
-      <div class="dw-search-placeholder active">暂无内容</div>
+      <div class="my-search-placeholder active">暂无内容</div>
     </div>
   </div>
 </div>
 <script type="text/javascript">
   var PAGE_SIZE = 20
   $(document).ready(function () {
-    $('.dw-search-close').click(toggleSearch);
-    $('.dw-search-shade').click(toggleSearch);
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
     $('.search-button').click(handleSearch);
-    $('.dw-search-categories').on('click', 'span', handleCategoryClick)
-    $('.dw-search-result-container').on('scroll', handleSearchResultScroll)
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
     $('#search-input').on('keydown', function (e) {
       e.key === 'Enter' && handleSearch()
     })
   })
   function toggleSearch() {
-    $('.dw-search-shade').toggleClass('opened');
-    $('.dw-search-content').toggleClass('opened');
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
     $('body').toggleClass('search-opened');
     // 关闭搜索框后清空输入内容，并且清掉搜索结果
     if (!$('body').hasClass('search-opened')) {
       $('#search-input').val('');
-      $('.dw-search-result-container').empty();
+      $('.my-search-result-container').empty();
     }
   }
   function handleCategoryClick(e) {
@@ -62,10 +62,10 @@
   function handleSearch(e, emitedByScroll) {
     var searchKeyword = $('#search-input').val();
     if (!searchKeyword.trim()) return
-    !emitedByScroll && $('.dw-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
-    !emitedByScroll && $('.dw-search-result-container').empty();
-    var type = $('.dw-search-categories span.active').data('category') || 'all';
-    var pageNo = emitedByScroll ? $('.dw-search-result-container').data('page') : 1;
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
     var analyzer = $('#analyzer').prop('checked');
     search(searchKeyword, type, pageNo, analyzer);
   }
@@ -74,15 +74,15 @@
     var scrollTop = scroller.scrollTop;
     var clientHeight = scroller.clientHeight;
     var scrollHeight = scroller.scrollHeight;
-    var loadmore = $('.dw-search-loadmore.active').length
+    var loadmore = $('.my-search-loadmore.active').length
     if (scrollTop + clientHeight === scrollHeight && loadmore) {
       handleSearch(e, true);
     }
   }
   function search(searchKeyword, type, pageNo, analyzer) {
     // 防止在请求数据的时候重复发送请求
-    if ($('.dw-search-result-container.fetching').length) return
-    $('.dw-search-result-container').addClass('fetching')
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
     $.ajax({
       type: 'post',
       url: 'https://docs.logwirecloud.com/search',
@@ -103,32 +103,32 @@
             $(fregment).append($(elementString));
           }
         } else {
-          $('.dw-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
           return
         }
-        $('.dw-search-loadmore').remove()
+        $('.my-search-loadmore').remove()
         if (total <= PAGE_SIZE * pageNo) {
           extraClass = 'hidden'
           nextPageNo = pageNo
         }
-        $(fregment).append($("<li class='dw-search-loadmore " + extraClass + "'>加载中...</li>"));
-        $('.dw-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
         if (pageNo === 1) {
-          $('.dw-search-result-container').scrollTop(0)
+          $('.my-search-result-container').scrollTop(0)
         }
       },
       error: function () {
-        $('.dw-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
       }
     })
   }
   function getElementString(result) {
-    var elementString = "<li class='dw-search-result'><a href=" + result.url + " target='_blank'>";
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
     elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
     elementString += "<div class='search-result-content'>" + result.content + "</div>";
     elementString += "<div class='search-result-breadcrumb'>";
     for (var index in result.breadcrumbs) {
-      elementString += "<span class='dw-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
     }
     elementString += "<span class='clearfix' /></div></a></li>";
     return elementString
