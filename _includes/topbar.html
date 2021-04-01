@@ -9,7 +9,7 @@
           <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand my-brand" href="/">
-        <!-- <img alt="Brand" class="logo" src="{{page.root}}/image/logo.png"> -->
+        <img alt="Brand" class="logo" src="{{page.root}}/image/my.png">
         <span>Halley's Blog</span>
       </a>
       <span class="fa fa-search icon-search xs visible-xs-block"></span>
@@ -51,41 +51,4 @@
     </div>
   </div>
 </nav>
-<script>
-  $(document).ready(function() {
-    $('.icon-search').click(toggleSearch)
-    $('#topSearch').keyup(function (e) {
-      var value = e.target.value
-      e.target.value = ''
-      toggleSearch(function () {
-        $('#search-input').focus()
-        $('#search-input').val(value)
-      })
-    })
-    function toggleSearch (callback) {
-      $('.my-search-shade').toggleClass('opened')
-      $('.my-search-content').toggleClass('opened')
-      $('body').toggleClass('search-opened')
-      typeof callback === 'function' && callback()
-    }
-    $.ajax({
-      type: 'get',
-      url: 'https://docs.logwirecloud.com/getUserInfo',
-      success: function (res) {
-        var results = res.results;
-        var avatar = results.avatar;
-        $('.avatar').attr('src', avatar);
-      }
-    })
-    $('.icon-sign-out').click(function() {
-      $.ajax({
-        type: 'get',
-        url: 'https://docs.logwirecloud.com/logout',
-        success: function (res) {
-          window.location.href = 'https://www.logwirecloud.com';
-        }
-      })
-    })
-  })
-</script>
 <!-- End Nav -->
