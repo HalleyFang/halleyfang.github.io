@@ -149,3 +149,41 @@
   font-size: 16px;
   border: none;
 }
+
+/* 自适应 */
+@media (max-width: 600px) {
+  .my-search-content{
+    width: 100%;
+  }
+}
+@media (max-width: 992px) {
+  .my-background{
+    display: none;
+  }
+  .my-sidebar{
+    border-top: 1px solid #eee;
+  }
+}
+@media (min-width: 992px) {
+  .content-container>.row{
+    width: 100%;
+    display: table;
+  }
+  .content-container>.row>.my-main-content, .content-container>.row>.my-sidebar{
+    display: table-cell;
+    float: none;
+    vertical-align: top;
+  }
+  .content-container>.row>.my-main-content{
+    background-color: #fbfbfb;
+  }
+}
+@media (max-width: 768px) {
+  .my-topbar-collapse{
+    background: #fff;
+    box-shadow: 0 6px 6px 0 #aaa;
+  }
+  .navbar-nav{
+    margin: 0;
+  }
+}
