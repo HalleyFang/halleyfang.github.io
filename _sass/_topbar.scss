@@ -21,8 +21,12 @@
 }
 .my-brand span, .my-brand img{
   float: left;
-  margin-right: 12px;
   vertical-align: middle;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #1f222B;
+  margin: 0 12px;
 }
 .my-brand span{
   line-height: 24px;
