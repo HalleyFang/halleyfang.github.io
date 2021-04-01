@@ -1,5 +1,5 @@
 <div class="wrap">
-  <div class="dw-sidebar-category">
+  <div class="my-sidebar-category">
       <div>
           <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
           Recent Posts
@@ -12,14 +12,14 @@
   </div>
 
   <!-- Content -->
-  <div class="dw-sidebar-category">
+  <div class="my-sidebar-category">
     <div>
         <i class="fa fa-th-list"></i>
         Categories
     </div>
     <ul class="content-ul" cate>
         {% for category in site.categories %}
-        <li class="dw-category">
+        <li class="my-category">
             <a href="{{ root_url }}/{{ site.category_dir }}#{{ category | first }}" class="categories-list-item" cate="{{ category | first }}">
                 <span class="name">
                     {{ category | first }}
@@ -31,7 +31,7 @@
     </ul>
 </div>
   <!-- 其他div框放到这里 -->
-  <div class="dw-sidebar-category">
+  <div class="my-sidebar-category">
       <div>
           <i class="fa fa-tags"></i>
           Tags
