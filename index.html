@@ -5,15 +5,11 @@ title: Halley’s Blog
 
 <div class="page clearfix" index>
 
-    {% assign contentClass = 'col-md-10 col-md-push-2' %}
-    {% assign sideClass = 'col-md-2 col-md-pull-10' %}
-
-    <div class="{{ contentClass }} my-main-content">
+    <div class="my-main-content">
         <h1>Welcome to Halley's Blog!</h1>
         <small>这里是halley.fang的个人博客站</small>
         <hr>
         <ul>
-            {% for post in paginator.posts %}
               <li>
                 <h2>
                   <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
@@ -46,10 +42,7 @@ title: Halley’s Blog
                 </div>
                 <hr>
               </li>
-            {% endfor %}
         </ul>
-
-
 
         <!-- Pagination links -->
         <div class="pagination">
@@ -70,7 +63,7 @@ title: Halley’s Blog
           {% endif %}
         </div>
     </div>
-    <div class="{{ sideClass }} my-sidebar">
+    <div class="my-sidebar">
       {% include postSidebar.html %}
     </div>
     </div>
