@@ -61,3 +61,32 @@
   background: #1F222B;
   margin: 0 12px;
 }
+
+.navbar-nav{
+  margin-left: 24px;
+  overflow: visible;
+}
+.navbar-nav>.open>a{
+  background-color: #2d2f3b !important;
+}
+.navbar-nav>li>a{
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  color: #fff !important;
+  text-decoration: none;
+}
+.navbar-nav .dropdown-menu{
+  background: #373947;
+}
+.navbar-nav .dropdown-menu a{
+  color: #fff;
+  text-decoration: none;
+}
+.navbar-nav .dropdown-menu>li>a:hover{
+  background-color: #2d2f3b !important;
+  color: #fff;
+}
+.icon-search.xs, .icon-search.sm{
+  float: right;
+  line-height: 40px;
+}
