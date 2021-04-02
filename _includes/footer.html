@@ -7,13 +7,13 @@
         </p>
         <p class="contact">
             Contact me at: {% if site.github %}
-            <a href="https://github.com/{{site.github_username}}" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            <a href="https://github.com/{{site.github}}" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
             {% endif %}
             {% if site.email %}
             <a href="mailto:{{site.email}}" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
             {% endif %}
             {% if site.qq %}
-            <a href="http://wpa.qq.com/msgrd?v=3&uin=QQ号码&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            <a href="http://wpa.qq.com/msgrd?v=3&uin={{site.qq}}&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
             {% endif %}
         </p>
         <p class="power">

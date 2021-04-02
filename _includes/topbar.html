@@ -15,10 +15,10 @@
       <span class="fa fa-search icon-search xs visible-xs-block"></span>
     </div>
     <div class="collapse navbar-collapse" id="my-topbar-collapse">
-      <span class="my-topbar-item hidden-xs">
+      <!-- <span class="my-topbar-item hidden-xs">
         <input type="text" placeholder="输入搜索内容" id="topSearch">
         <span class="fa fa-search  icon-search"></span>
-      </span>
+      </span> -->
       <ul class="nav navbar-nav">
         <li>
             {% if page.url == '/' %}
@@ -47,4 +47,22 @@
     </div>
   </div>
 </nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
 <!-- End Nav -->
