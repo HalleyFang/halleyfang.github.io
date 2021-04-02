@@ -1,4 +1,4 @@
-.site-footer {
+.my-footer {
     position: absolute;
     right: 0;
     bottom: 0;
@@ -9,7 +9,7 @@
     background-color: #2b2b3c;
     box-shadow: 0 -2px 4px 1px rgba(0,0,0,0.5);
     color: #bbb;
-    .wrapper {
+    .my-wrapper {
         width: 1140px;
         margin: 0 auto;
         padding: 15px 0;
@@ -48,15 +48,15 @@
     }
 }
 @media screen and (max-width:1200px) and (min-width: 770px) {
-    .site-footer {
-        .wrapper {
+    .my-footer {
+        .my-wrapper {
             width: 90%;
         }
     }
 }
 @media screen and (max-width: 770px) {
-    .site-footer {
-        .wrapper {
+    .my-footer {
+        .my-wrapper {
             width: 90%;
         }
     }
