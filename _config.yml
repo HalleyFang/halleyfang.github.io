@@ -8,6 +8,10 @@ category_dir: category/
 tag_dir: tag/
 excerpt_separator: "\n\n\n\n"
 
+plugins:
+  - asciidoctor-diagram
+  - jekyll-asciidoc
+
 exclude:
   - LICENSE.adoc
   - README.adoc
