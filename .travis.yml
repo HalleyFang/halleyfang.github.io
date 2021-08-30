@@ -2,6 +2,9 @@ language: ruby
 rvm:
   - 2.7.4
 before_install:
-  - rvm use 2.7.4 --default && gem update && gem install bundler && bundle update
-sudo: false
-script: "bundle exec jekyll build"
+  - rvm use 2.7.4 --default && ruby --version
+  - gem update 
+  - gem install bundler 
+  - bundle update
+script: 
+  - bundle exec jekyll build
