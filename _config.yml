@@ -6,7 +6,7 @@ paginate: 5
 paginate_path: "post-page/page:num"
 category_dir: category/
 tag_dir: tag/
-excerpt_separator: "\n\n\n\n"
+excerpt_separator: "\n//more\n"
 
 exclude:
   - LICENSE.adoc
@@ -22,6 +22,10 @@ kramdown:
  auto_ids: true
  hard_wrap: false
  syntax_highlighter: highlightjs
+
+plugins:
+  - asciidoctor-diagram
+  - jekyll-asciidoc
 
 asciidoc: {}
 asciidoctor:
