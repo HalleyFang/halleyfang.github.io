@@ -5,6 +5,6 @@ before_install:
   - rvm use 2.7.4 --default && ruby --version
   - gem update 
   - gem install bundler 
-  - bundle update
+  - bundle install
 script: 
   - bundle exec jekyll build
