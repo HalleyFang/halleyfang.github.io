@@ -2,4 +2,4 @@ language: ruby
 rvm:
   - 2.7
 sudo: false
-script: "bundle exec jekyll build"
+script: "gem update && gem install bundler && bundle update && bundle exec jekyll build"
