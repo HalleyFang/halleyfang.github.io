@@ -8,3 +8,6 @@ before_install:
   - bundle install
 script: 
   - bundle exec jekyll build
+env:
+  global:
+    secure: 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
