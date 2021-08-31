@@ -11,3 +11,10 @@ script:
 env:
   global:
     secure: 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
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: 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
+  keep_history: true
+  on:
+    branch: master    
