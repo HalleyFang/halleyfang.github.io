@@ -17,4 +17,4 @@ deploy:
   github_token: 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
   keep_history: true
   on:
-    branch: master    
+    branch: gh-pages    
