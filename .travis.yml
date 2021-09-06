@@ -8,10 +8,6 @@ before_install:
   - bundle install
 script: 
   - bundle exec jekyll build
-deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: $S_KEY
-  keep_history: true
-  on:
-    branch: master   
+env:
+  global:
+    secure: $S_KEY
