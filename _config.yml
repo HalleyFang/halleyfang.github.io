@@ -20,6 +20,8 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - Rakefile
+  - vendor
+  
 markdown: kramdown
 kramdown:
  input: GFM
