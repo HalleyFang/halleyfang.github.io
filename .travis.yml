@@ -2,6 +2,7 @@ language: ruby
 rvm:
   - 2.7.4
 before_install:
+  - echo "$S_KEY"
   - rvm use 2.7.4 --default && ruby --version
   - gem update 
   - gem install bundler
