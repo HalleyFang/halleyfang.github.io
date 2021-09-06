@@ -8,7 +8,12 @@ before_install:
   - bundle install
 script: 
   - bundle exec jekyll build
-  - bundle exec rake deploy
 env:
   global:
     secure: $S_KEY
+deploy:
+  provider: _site
+  skip_cleanup: true
+  github_token: $S_KEY
+  on:
+    branch: gh-pages
