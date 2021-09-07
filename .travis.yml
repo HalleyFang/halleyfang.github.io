@@ -10,7 +10,7 @@ script:
   - bundle exec jekyll build
 after_success:
   - git clone https://github.com/HalleyFang/halleyfang.github.io.git
-  - cd halleyfang.github.io && rm -rf * && cp -r ../_site/* .
+  - cd halleyfang.github.io && git checkout -b gh-pages && rm -rf * && cp -r ../_site/* .
   - git config user.name "Travis CI"
   - git config user.email "fangxu568@gmail.com"
   - git add --all .
