@@ -76,16 +76,20 @@ layout: default
             <div id="tocify" class="dw-toc">
               <div class="dw-toc-header">Table of contents</div>
             </div>
+            {% if hasSimilar.size > 0 %}
+            <div><a href="#similar_posts">Similar Posts</a></div>
+            {% endif %}
+            <div><a href="#comments">Comments</a></div>
           </div>
             <!-- Content -->
-            <div class="side content">
+            <!--<div class="side content">
                 <ul id="content-side" class="content-ul">
                     {% if hasSimilar.size > 0 %}
                     <li><a href="#similar_posts">Similar Posts</a></li>
                     {% endif %}
                     <li><a href="#comments">Comments</a></li>
                 </ul>
-            </div>
+            </div>-->
         </div>
     </div>
 </div>
