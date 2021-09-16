@@ -1,10 +1,6 @@
 :page-categories: [guide]
 :page-tags: [mockito,powermock,参考指南]
 :author: halley.fang
-:toc:
-:toclevels: 5
-:numbered:
-:hardbreaks:
 :doctype: book
 
 `Mockito` 是一个流行的 mock 框架，可以与 `JUnit` 或 `TestNG` 一起使用。Mockito 允许您创建和配置模拟对象。使用 Mockito 可以极大地简化具有外部依赖项的类的测试开发。

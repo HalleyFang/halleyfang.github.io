@@ -1,13 +1,11 @@
 :page-categories: [guide]
 :page-tags: [junit,参考指南]
 :author: halley.fang
-:toc:
-:toclevels: 5
-:numbered:
-:hardbreaks:
 :doctype: book
 
 junit使用
+
+//more
 
 ## 定义测试方法
 

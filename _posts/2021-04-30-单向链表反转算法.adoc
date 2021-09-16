@@ -1,10 +1,6 @@
 :page-categories: [training]
 :page-tags: [training,arithmetic]
 :author: halley.fang
-:toc:
-:toclevels: 5
-:numbered:
-:hardbreaks:
 
 单向链表反转：例如当前有单向链表 1 -> 2 -> 3 -> 4 -> 5,发转后变成 5 -> 4 -> 3 -> 2 -> 1
 

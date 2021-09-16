@@ -1,10 +1,6 @@
 :page-categories: [guide]
 :page-tags: [流程与规范]
 :author: halley.fang
-:toc:
-:toclevels: 5
-:numbered:
-:hardbreaks:
 :doctype: book
 
 软件版本流程与规范

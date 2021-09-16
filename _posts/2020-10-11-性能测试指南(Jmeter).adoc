@@ -1,10 +1,6 @@
 :page-categories: [guide]
 :page-tags: [参考指南]
 :author: halley.fang
-:toc:
-:toclevels: 5
-:numbered:
-:hardbreaks:
 
 本文将从测试需求分析、测试准备、脚本开发与测试执行、测试结果分析与调优、性能测试报告五个阶段对性能测试过程进行阐述。
 

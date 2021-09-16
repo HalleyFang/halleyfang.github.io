@@ -1,10 +1,6 @@
 :page-categories: [guide]
 :page-tags: [guide]
 :author: halley.fang
-:toc:
-:toclevels: 5
-:numbered:
-:hardbreaks:
 :doctype: book
 
 APP测试基本流程

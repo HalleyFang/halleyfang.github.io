@@ -1,10 +1,6 @@
 :page-categories: [jnuit]
 :page-tags: [jnuit,源码阅读]
 :author: halley.fang
-:toc:
-:toclevels: 5
-:numbered:
-:hardbreaks:
 :doctype: book
 
 Junit 4 源代码阅读笔记 - BlockJUnit4ClassRunner
