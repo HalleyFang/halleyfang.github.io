@@ -80,8 +80,10 @@ layout: default
                 </div>
                 <ul id="content-side" class="content-ul">
                   {% if page.toc != false %}
-                    <li class="col-md-2">
-                      {% include toc.html %}
+                    <li>
+                      <div class="col-md-2">
+                        {% include toc.html %}
+                      </div>
                     </li>
                   {% endif %}
                     {% if hasSimilar.size > 0 %}
