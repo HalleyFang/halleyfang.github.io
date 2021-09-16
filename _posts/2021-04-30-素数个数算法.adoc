@@ -1,3 +1,10 @@
+:page-categories: [training]
+:page-tags: [training,arithmetic]
+:author: halley.fang
+:toc:
+:toclevels: 5
+:numbered:
+:hardbreaks:
 
 例题：输入一个数，输出小于等于该数的素数个数
 

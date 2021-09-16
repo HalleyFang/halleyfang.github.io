@@ -85,7 +85,7 @@
     $('.my-search-result-container').addClass('fetching')
     $.ajax({
       type: 'post',
-      url: 'https://docs.logwirecloud.com/search',
+      url: 'https://{docs}/search',
       dataType: 'json',
       data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
       success: function (res) {
