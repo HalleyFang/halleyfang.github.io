@@ -3,7 +3,7 @@
 :author: halley.fang
 :doctype: book
 
-Junit 4 源代码阅读笔记 - BlockJUnit4ClassRunner
+junit4执行加载器默认为 `BlockJUnit4ClassRunner`，平时测试时我经常使用的是 `SpringRunner`、`MockitoJUnitRunner`、`PowerMockRunner` 等，具体使用方式为使用类注解@RunWith,本文中以默认加载器进行解读，其他几个常用 `runner` 后续进行单独解读。
 
 //more
 
@@ -11,8 +11,6 @@ Junit 4 源代码阅读笔记 - BlockJUnit4ClassRunner
 ## Junit4 源码阅读
 
 阅读方向：根据对 `Junit4` 的使用，首先是如何加载并运行测试，然后是一些常用注解
-
-junit4执行加载器默认为 `BlockJUnit4ClassRunner`，平时测试时我经常使用的是 `SpringRunner`、`MockitoJUnitRunner`、`PowerMockRunner` 等，具体使用方式为使用类注解@RunWith,本文中以默认加载器进行解读，其他几个常用 `runner` 后续进行单独解读。
 
 . idea 调用入口
 +

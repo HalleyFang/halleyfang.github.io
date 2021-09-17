@@ -3,7 +3,7 @@
 :author: halley.fang
 :doctype: book
 
-junit使用
+junit使用，包含常用注解说明、`Assert`、`Suite`、`Ignore`、`Parameterized`、`rules`、自定义 `rule`、`Categories`、静态导入
 
 //more
 
@@ -220,7 +220,7 @@ public class ParameterizedTestUsingConstructor {
 如果您运行此测试类，则会使用每个定义的参数执行测试方法。在上面的例子中，测试方法被执行了 3 次。
 
 
-## rule
+## rules
 
 通过 JUnit 规则，您可以向测试类中的每个测试添加行为。您可以标注类型的字段TestRule与@Rule注释。您可以创建可以在测试方法中使用和配置的对象。这为您的测试增加了更多的灵活性。例如，您可以指定在执行测试代码期间期望的异常消息。
 

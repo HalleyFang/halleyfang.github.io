@@ -3,7 +3,7 @@
 :author: halley.fang
 :doctype: book
 
-Junit 4 源代码阅读笔记-textui.TestRunner
+junit可以通过命令行进行执行，`java -ea junit.textui.TestRunner testclass` 这样的形式，本文主要就是阅读 `junit.textui.TestRunner` 的源码。
 
 //more
 

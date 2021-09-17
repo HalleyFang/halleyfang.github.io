@@ -3,12 +3,13 @@
 :author: halley.fang
 :doctype: book
 
-Junit 4 源代码阅读笔记 - SpringRunner
+`SpringRunner` 继承 `SpringJUnit4ClassRunner`，`SpringJUnit4ClassRunner` 继承 `BlockJUnit4ClassRunner`，本文中将阅读 `SpringJUnit4ClassRunner` 的源码
 
 //more
 
 ## SpringRunner 源码阅读
 
+### 继承BlockJUnit4ClassRunner
 . 继承BlockJUnit4ClassRunner
 +
 `SpringRunner` 继承 `SpringJUnit4ClassRunner`
@@ -430,6 +431,7 @@ protected Statement withAfters(FrameworkMethod frameworkMethod, Object testInsta
 }
 ```
 
+### 除重写方法以外其他方法
 . 除重写方法以外其他方法
 +
 `SpringJUnit4ClassRunner` 除重写方法以外还有一些其他方法，上节中也已经阅读过一些，本节就阅读一下剩余的方法
