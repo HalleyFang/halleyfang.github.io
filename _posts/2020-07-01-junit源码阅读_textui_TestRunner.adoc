@@ -14,7 +14,7 @@ Junit 4 源代码阅读笔记-textui.TestRunner
 首先找到junit的入口类
 
 .main方法
-image::{{page.root}}/images/junit4/textui.png[入口类]
+image::/images/junit4/textui.png[入口类]
 
 ```java
 public static void main(String[] args) {
@@ -207,7 +207,7 @@ public TestResult doRun(Test suite, boolean wait) {
 ```
 
 .test run实现
-image::{{page.root}}/images/junit4/run.png[run实现]
+image::/images/junit4/run.png[run实现]
 
 ```java
 public void run(TestResult result) {

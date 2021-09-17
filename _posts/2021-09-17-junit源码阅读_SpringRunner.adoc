@@ -9,8 +9,10 @@ Junit 4 源代码阅读笔记 - SpringRunner
 
 ## SpringRunner 源码阅读
 
+. 继承BlockJUnit4ClassRunner
++
 `SpringRunner` 继承 `SpringJUnit4ClassRunner`
-
++
 ```java
 public final class SpringRunner extends SpringJUnit4ClassRunner {
 
@@ -27,11 +29,26 @@ public final class SpringRunner extends SpringJUnit4ClassRunner {
 
 }
 ```
-
++
 `SpringJUnit4ClassRunner` 继承 `BlockJUnit4ClassRunner`
-
++
 ```java
 public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 ...
+}
+```
++
+`BlockJUnit4ClassRunner` 源码阅读在前面博客已经讲述过，下面直接来看下 `SpringJUnit4ClassRunner` 重写了哪些方法：
++
+```java
+@Override
+public Description getDescription() {
+  //当类上有@IfProfileValue注解时
+  if (!ProfileValueUtils.isTestEnabledInThisEnvironment(getTestClass().getJavaClass())) {
+    //
+    return Description.createSuiteDescription(getTestClass().getJavaClass());
+  }
+  //没有@IfProfileValue则使用父类方法
+  return super.getDescription();
 }
 ```

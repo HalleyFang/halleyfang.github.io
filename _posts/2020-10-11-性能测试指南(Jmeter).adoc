@@ -139,7 +139,7 @@
 . 进入 `bin` 目录，运行 `jmeter.bat` 启动，启动成功界面如图所示
 +
 .启动成功
-image::{{page.root}}/images/jmeter001.png[启动成功]
+image::/images/jmeter001.png[启动成功]
 
 #### 安装 badboy(可选)
 下载 `Badboy` （官方下载地址： http://www.badboy.com.au ） 进行安装
@@ -172,12 +172,12 @@ image::{{page.root}}/images/jmeter001.png[启动成功]
 右击 `TestPlan` ,选择 `Add->Treads(Users)->Thread Group`
 +
 .创建线程组
-image::{{page.root}}/images/CreateThreadGroup.png[创建线程组]
+image::/images/CreateThreadGroup.png[创建线程组]
 
 . 设置一个 `Name` ，例如 `demo`
 +
 .创建线程组
-image::{{page.root}}/images/demo001.png[创建线程组]
+image::/images/demo001.png[创建线程组]
 
 . 配置 `Thread Properties` 执行策略，参见<<set-thread-starting-strategy>>
 
@@ -192,12 +192,12 @@ image::{{page.root}}/images/demo001.png[创建线程组]
 . 创建 `HTTP(S) Test Script Recorder`
 +
 .创建录制代理
-image::{{page.root}}/images/demo002.png[创建录制代理]
+image::/images/demo002.png[创建录制代理]
 
 . 配置 `port` 和 `Target Controller`
 +
 .创建录制代理
-image::{{page.root}}/images/demo003.png[创建录制代理]
+image::/images/demo003.png[创建录制代理]
 
 . 登录系统，进入图书界面,设置浏览器代理
 +
@@ -207,45 +207,45 @@ image::{{page.root}}/images/demo003.png[创建录制代理]
 ====
 +
 .图书界面
-image::{{page.root}}/images/demo004.png[图书界面]
+image::/images/demo004.png[图书界面]
 +
 .浏览器代理设置
-image::{{page.root}}/images/demo005.png[浏览器代理设置]
+image::/images/demo005.png[浏览器代理设置]
 
 . 启动 `HTTP(S) Test Script Recorder`
 点击start启动
 +
 .启动代理服务
-image::{{page.root}}/images/demo006.png[启动代理服务]
+image::/images/demo006.png[启动代理服务]
 
 . 浏览器操作新增图书动作，新增成功
 +
 .新增图书
-image::{{page.root}}/images/demo007.png[新增图书]
+image::/images/demo007.png[新增图书]
 
 . 停止 `HTTP(S) Test Script Recorder` ，查看录制的脚本（脚本根据实际情况调整消息请求，删除无用请求）
 +
 .录制脚本
-image::{{page.root}}/images/demo008.png[录制脚本]
+image::/images/demo008.png[录制脚本]
 
 #### badboy 录制请求消息
 通过 Jmeter 代理录制脚本后，会产生大量的无用的请求，尽管在代理中已经过滤了一部分图片或者 CSS、JS 文件。使用 badboy 录制可以提高开发效率。
 
 
 .打开 Badboy
-image::{{page.root}}/images/badboy001.png[打开Badboy]
+image::/images/badboy001.png[打开Badboy]
 . 在地址框输入要录入的 URL 地址，然后进行一些列你想要的操作
 +
 .Badboy 录制
-image::{{page.root}}/images/badboy002.png[Badboy录制]
+image::/images/badboy002.png[Badboy录制]
 . 录制完成后，直接导出为 Jmeter 脚本
 +
 .Badboy 导出脚本
-image::{{page.root}}/images/badboy003.png[Badboy导出脚本]
+image::/images/badboy003.png[Badboy导出脚本]
 . Jmeter 打开录制导出的 `Jmeter` 脚本
 +
 .录制脚本
-image::{{page.root}}/images/demo008.png[录制脚本]
+image::/images/demo008.png[录制脚本]
 
 #### 手动创建请求消息
 手动创建即按照业务请求直接创建消息 `sampler` ，对工具不熟悉者且业务逻辑复杂的建议使用录制。手动创建可以通过浏览器开发者工具或者抓包工具查看请求消息和响应消息，用 Jmeter 相应的组件实现模拟请求。具体业务具体分析，以下步骤仅供参考：
@@ -255,7 +255,7 @@ image::{{page.root}}/images/demo008.png[录制脚本]
 . 添加 HTTP Request
 +
 .手动创建
-image::{{page.root}}/images/jmeter002.png[手动创建]
+image::/images/jmeter002.png[手动创建]
 
 ### 参数化
 性能测试需要模拟多用户并发，请求与用户应该是一一对应，所以需要对请求消息内容进行参数化，从而实现请求与用户一一对应。
@@ -302,7 +302,7 @@ dandan,123456
 . `Timeout in milliseconds` : 超时（毫秒）,设置超时时间，即组在超时时间后达不到设置的线程数时，会丢弃继续请求
 
 .集合点
-image::{{page.root}}/images/demo013.png[集合点]
+image::/images/demo013.png[集合点]
 
 ### 关联（可选）
 关联有以下两种方法：
@@ -323,13 +323,13 @@ image::{{page.root}}/images/demo013.png[集合点]
 用户界面操作会有一定的操作时间，则性能测试时合理添加思考时间更能贴近实际使用场景，从而获得更可靠的性能数据
 
 .思考时间
-image::{{page.root}}/images/demo009.png[思考时间]
+image::/images/demo009.png[思考时间]
 
 ### 添加 Jmeter 监听
 创建监听 `Aggregate Report，View Results Tree`
 
 .监听
-image::{{page.root}}/images/demo010.png[监听]
+image::/images/demo010.png[监听]
 
 ### 部署服务器监听
 监听可以使用 jmeter 插件<<jpgc>> 或 <<nmon>>，使用 jmeter 则推荐使用插件，其他性能工具可以使用 `nmon`。使用 jpgc ，参考<<jpgc>>安装插件，使用步骤如下
@@ -337,12 +337,12 @@ image::{{page.root}}/images/demo010.png[监听]
 . 添加 `jp@gc - PerfMon Metrics Collector`
 +
 .jp@gc监听
-image::{{page.root}}/images/jmeter003.png[jp@gc监听]
+image::/images/jmeter003.png[jp@gc监听]
 
 . 配置监控的服务器以及监控内容
 +
 .jp@gc监听
-image::{{page.root}}/images/jmeter004.png[jp@gc监听]
+image::/images/jmeter004.png[jp@gc监听]
 
 [[set-thread-starting-strategy]]
 ### 配置线程启动策略
@@ -352,13 +352,13 @@ image::{{page.root}}/images/jmeter004.png[jp@gc监听]
 . 循环次数：每个线程发送请求的次数。如果线程数为20， 循环次数为100，那么每个线程发送100次请求。总请求数为20*100=2000。如果勾选了 `永远` ,那么所有线程会一直发送请求，直到选择停止运行脚本。 `1S=1000MS,1MIN=60000MS,1H=3600000MS`
 
 .启动策略
-image::{{page.root}}/images/demo011.png[启动策略]
+image::/images/demo011.png[启动策略]
 
 ### 执行测试
 . 运行线程
 
 .运行线程
-image::{{page.root}}/images/demo012.png[运行线程]
+image::/images/demo012.png[运行线程]
 
 ## 测试结果分析与调优
 

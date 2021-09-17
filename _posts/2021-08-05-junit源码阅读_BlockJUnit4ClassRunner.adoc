@@ -7,6 +7,7 @@ Junit 4 源代码阅读笔记 - BlockJUnit4ClassRunner
 
 //more
 
+[[BlockJUnit4ClassRunner]]
 ## Junit4 源码阅读
 
 阅读方向：根据对 `Junit4` 的使用，首先是如何加载并运行测试，然后是一些常用注解
@@ -16,7 +17,7 @@ junit4执行加载器默认为 `BlockJUnit4ClassRunner`，平时测试时我经�
 . idea 调用入口
 +
 .idea调用
-image::{{page.root}}/images/junit4/ideaDebug.png[idea调用]
+image::/images/junit4/ideaDebug.png[idea调用]
 +
 可以看出 `idea` 插件实际调用到了 `JUnitCore` 类的 `run` 方法，下文就直接从该方法开始往下阅读
 +

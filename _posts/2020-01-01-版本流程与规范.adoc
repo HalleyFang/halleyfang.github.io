@@ -10,7 +10,7 @@
 ## 项目流程
 ### 项目流程
 .项目流程
-image::{{page.root}}/images/version-rules/流程1.png[项目流程]
+image::/images/version-rules/流程1.png[项目流程]
 
 ### 流程说明
 [cols="2,2,6,4",options="header"]
@@ -232,7 +232,7 @@ V2.0——发布定期要上线的功能。
 ```
 
 .分支模型
-image::{{page.root}}/images/version-rules/mygitflow.png[分支模型]
+image::/images/version-rules/mygitflow.png[分支模型]
 
 ### Softwire-web开发过程
 . 进入开发阶段后，开发人员在 `master` 分支进行功能开发。
@@ -476,7 +476,7 @@ git push
 
 ### bug处理流程
 .bug流程
-image::{{page.root}}/images/version-rules/bug.png[bug流程]
+image::/images/version-rules/bug.png[bug流程]
 
 流程说明：
 
