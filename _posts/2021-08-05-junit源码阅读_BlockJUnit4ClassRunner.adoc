@@ -1,5 +1,5 @@
-:page-categories: [jnuit]
-:page-tags: [jnuit,源码阅读]
+:page-categories: [junit]
+:page-tags: [junit,源码阅读]
 :author: halley.fang
 :doctype: book
 
@@ -16,7 +16,7 @@ junit4执行加载器默认为 `BlockJUnit4ClassRunner`，平时测试时我经�
 . idea 调用入口
 +
 .idea调用
-image::images/junit4/ideaDebug.png[idea调用]
+image::{{page.root}}/images/junit4/ideaDebug.png[idea调用]
 +
 可以看出 `idea` 插件实际调用到了 `JUnitCore` 类的 `run` 方法，下文就直接从该方法开始往下阅读
 +

@@ -1,0 +1,37 @@
+:page-categories: [junit]
+:page-tags: [junit,源码阅读]
+:author: halley.fang
+:doctype: book
+
+Junit 4 源代码阅读笔记 - SpringRunner
+
+//more
+
+## SpringRunner 源码阅读
+
+`SpringRunner` 继承 `SpringJUnit4ClassRunner`
+
+```java
+public final class SpringRunner extends SpringJUnit4ClassRunner {
+
+	/**
+	 * Construct a new {@code SpringRunner} and initialize a
+	 * {@link org.springframework.test.context.TestContextManager TestContextManager}
+	 * to provide Spring testing functionality to standard JUnit 4 tests.
+	 * @param clazz the test class to be run
+	 * @see #createTestContextManager(Class)
+	 */
+	public SpringRunner(Class<?> clazz) throws InitializationError {
+		super(clazz);
+	}
+
+}
+```
+
+`SpringJUnit4ClassRunner` 继承 `BlockJUnit4ClassRunner`
+
+```java
+public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+...
+}
+```

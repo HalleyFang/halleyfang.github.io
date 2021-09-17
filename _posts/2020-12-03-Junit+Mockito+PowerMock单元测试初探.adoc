@@ -1040,15 +1040,15 @@ mvn clean verify sonar:sonar
 单元测试结果如图：
 
 .单元测试结果
-image::images/unitest/u1.png[]
+image::{{page.root}}/images/unitest/u1.png[]
 
 覆盖率查看如图：
 
 .覆盖率视图
-image::images/unitest/c1.png[]
+image::{{page.root}}/images/unitest/c1.png[]
 
 .覆盖率详情
-image::images/unitest/c2.png[]
+image::{{page.root}}/images/unitest/c2.png[]
 
 [NOTE]
 ====
