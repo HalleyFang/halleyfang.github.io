@@ -450,6 +450,52 @@ public void removeListener(RunListener listener) {
 }
 ```
 
+### 测试方法执行顺序
+
+在之前的版本中，Junit在设计上并没有指定测试方法的执行顺序，从4.11版本开始，Junit将默认使用一种确定性的顺序，也即 `MethodSorters.DEFAULT`。如果想改变测试方法的执行顺序可以为测试用例添加 `FixMethodOrder` 注解，并且指定其方法的排序类型，可选的 `MethodSorters` 有：
+
+* `DEFAULT`，根据方法名称的hashCode进行比较，如果hashCode相同则按照 `NAME_ASCENDING` 进行比较；
+* `NAME_ASCENDING`，根据方法名称进行比较；
+* `JVM`，使用JVM返回的顺序。
+
+```java
+/**
+ * Sort the methods into a specified execution order.
+ * Defines common {@link MethodSorter} implementations.
+ *
+ * @since 4.11
+ */
+public enum MethodSorters {
+    /**
+     * Sorts the test methods by the method name, in lexicographic order,
+     * with {@link Method#toString()} used as a tiebreaker
+     */
+    NAME_ASCENDING(MethodSorter.NAME_ASCENDING),
+
+    /**
+     * Leaves the test methods in the order returned by the JVM.
+     * Note that the order from the JVM may vary from run to run
+     */
+    JVM(null),
+
+    /**
+     * Sorts the test methods in a deterministic, but not predictable, order
+     */
+    DEFAULT(MethodSorter.DEFAULT);
+
+    private final Comparator<Method> comparator;
+
+    private MethodSorters(Comparator<Method> comparator) {
+        this.comparator = comparator;
+    }
+
+    public Comparator<Method> getComparator() {
+        return comparator;
+    }
+```
+
+如果一定需要按照自定义顺序执行，可以使用 `TestNG` 测试框架进行 `case` 顺序定义，后续会在 `TestNg` 源码阅读博客中进行讲述。
+
 ## 总结
 
 ### 类说明
