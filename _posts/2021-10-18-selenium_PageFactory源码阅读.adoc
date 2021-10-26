@@ -304,3 +304,8 @@ private static void proxyFields(FieldDecorator decorator, Object page, Class<?> 
 ```
 
 好了，到此为止 `PageFactory` 的原理基本上清晰了，还有一个 `@FindBy` 传值定位元素方式的源代码比较直白易懂，而且由于本人接触的项目都是属于平台类型的，基本不会使用到 `id` `name` 这些方式，所以本文中就暂不赘述了，感兴趣的同学自己打开源码看一看吧。
+
+[NOTE]
+====
+@CacheLookup 最好谨慎使用，一般是确定且已成功加载的元素才使用进行缓存；如果元素加载缓慢一般我们会使用显示等待的方式，如果超时了会抛出异常，如果缓存了则会等到具体操作元素时才会抛出异常
+====

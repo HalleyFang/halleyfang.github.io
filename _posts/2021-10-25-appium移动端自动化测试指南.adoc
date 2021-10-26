@@ -1,0 +1,243 @@
+:page-categories: [appium]
+:page-tags: [appium,参考指南]
+:author: halley.fang
+:doctype: book
+
+`appium` 主要用于移动端自动化测试，支持 `iOS` 和 `Android` 上 `Web App`、`Native App` 和 `Hybrid App` 的自动化测试。
+
+//more
+
+## appium 原理
+
+ Appium 分成三大部分，分别是 Appium Client、Appium Server 和设备端
+
+.appium结构
+image::/images/selenium/appium.png[Appium]
+
+Appium Server 有 Mac 和 Windows 版本，也就是说 Appium Server 可以运行在 Mac 或者 Windows 电脑上。本质上，Appium Server 是一个 Node.js 应用，接受来自 Appium Client 的请求，解析后通过 WebDriver 协议和设备端上的代理打交道。
+
+* 如果是 iOS，Appium Server 会把操作请求发送给 WebDriverAgent（简称 WDA），然后 WDA 再基于 XCUITest 完成 iOS 模拟器或者真机上的自动化操作；
+* 如果是 Android，Appium Server 会把操作请求发送给 appium-UIautomator2-server，然后 appium-UIautomator2-server 再基于 UIAutomator V2 完成 Android 模拟器或者真机上的自动化操作。
+Appium Client 其实就是测试代码，使用对应语言的 Client 将基于 JSON Wire 协议的操作指令发给 Appium Server。
+
+整体来说，Appium 的内部原理可以总结为：Appium 属于 C/S 架构，Appium Client 通过多语言支持的第三方库向 Appium Server 发起请求，基于 Node.js 的 Appium Server 会接受 Appium Client 发来的请求，接着和 iOS 或者 Android 平台上的代理工具打交道，代理工具在运行过程中不断接收请求，并根据 WebDriver 协议解析出要执行的操作，最后调用 iOS 或者 Android 平台上的原生测试框架完成测试。
+
+## 常用操作
+
+### adb常用命令(windows)
+
+```sh
+#adb停止
+adb kill-server
+#adb启动
+adb start-server
+#设备查看
+adb devices
+#连接设备
+adb connect {ip}:{port}
+#断开连接
+adb disconnect {ip}:{port}
+#设置手机分辨率
+adb shell wm size 2340x1080
+#恢复分辨率
+adb shell wm size reset
+#设置屏幕显示范围 可通过此命令隐藏导航栏，底部白边等，参数自调
+adb shell wm overscan 0,0,0,-3
+#还原屏幕显示范围
+adb shell wm overscan reset
+#隐藏导航栏(全局)
+adb shell settings put global policy_control immersive.navigation=*
+#隐藏导航栏(指定应用)
+adb shell settings put global policy_control immersive.navigation={packageName}
+#隐藏状态栏(全局)
+adb shell settings put global policy_control immersive.status=*
+#隐藏状态栏(指定应用)
+adb shell settings put global policy_control immersive.status={packageName}
+#重置隐藏状态栏/导航栏(恢复)
+adb shell settings put global policy_control null
+#列出已安装应用包名
+adb shell pm list packages
+#安装apk文件
+adb install {absolutePath}
+#卸载软件
+adb uninstall {packageName}
+#强行停止软件
+adb shell am force-stop {packageName}
+#重启设备
+adb reboot
+#获取包名（打开待测app）
+adb shell dumpsys window | findstr mCurrent
+adb shell dumpsys activity | findstr mFocusedActivity
+#推送电脑文件到手机
+adb push {local} {mobile}
+#复制手机文件到电脑
+adb pull {mobile} {local}
+#查看手机IP地址
+adb shell ifconfig | findstr Maski
+#查看CPU信息
+adb shell cat /proc/cpuinfo
+#查看内存信息
+adb shell cat /proc/meminfo
+#关闭adb调试模式
+adb shell settings put global adb_enabled 0
+#获取日志
+adb logcat
+#启动时间
+adb shell am start -w {packageName}
+```
+
+
+### ios-deploy常用命令
+
+```sh
+#查看连接的设备（包括通过usb和wifi连接的）
+ios-deploy -c
+#查看通过usb连接的设备
+ios-deploy -c --no-wifi
+#安装应用到指定设备（其中xxx.app是Xcode编译后的ipa的路径）
+ios-deploy --id [udid] --bundle [xxx.app]
+#卸载指定设备上的应用（根据包名，也就是bundleId）
+ios-deploy --id [udid] --uninstall_only --bundle_id [bundleId]
+#查看指定设备上安装的所有应用（包括系统应用和第三方）
+ios-deploy --id [udid] --list_bundle_id
+#检查指定设备上是否安装了某个应用
+ios-deploy --id [udid] --exists --bundle_id
+```
+
+## Appium操作
+
+### app操作
+
+* 启动app `driver.startActivity`
+* 关闭 `diver.close`
+* 退出 `diver.quite`
+* 关闭APP和驱动 `diver.closeapp`
+* 置于后台
+```java
+JavascriptExecutor jse = (JavascriptExecutor) driver;
+Map<String, Object> params = new HashMap<>();
+params.put("bundleId", "com.test");
+final boolean wasRunningBefore = (Boolean)jse.executeScript("mobile: terminateApp", params);
+```
+* 启动至于后台的app
+```java
+JavascriptExecutor jse = (JavascriptExecutor) driver;
+Map<String, Object> params = new HashMap<>();
+params.put("bundleId", "com.test");
+jse.executeScript("mobile: activateApp", params);
+```
+* 获取元素位置和大小
+```
+element.location
+element.size
+```
+* 获取和设置手机网络
+```
+networkconnection
+setNetworkconnection
+```
+
+### 触控操作TouchAction
+
+* 轻敲 tap
+* 按下 press
+* 抬起 release
+* 等待 wait
+* 长按 longpress
+* 移动 moveTo
+
+### 多点触控MultiTouchAction
+
+* 手势 MultiTouchAction
+
+### 模拟键盘输入
+
+```
+电话键
+KEYCODE_CALL 拨号键 5
+KEYCODE_ENDCALL 挂机键 6
+KEYCODE_HOME 按键Home 3
+KEYCODE_MENU 菜单键 82
+KEYCODE_BACK 返回键 4
+KEYCODE_SEARCH 搜索键 84
+KEYCODE_CAMERA 拍照键 27
+KEYCODE_FOCUS 拍照对焦键 80
+KEYCODE_POWER 电源键 26
+KEYCODE_NOTIFICATION 通知键 83
+KEYCODE_MUTE 话筒静音键 91
+KEYCODE_VOLUME_MUTE 扬声器静音键 164
+KEYCODE_VOLUME_UP 音量增加键 24
+KEYCODE_VOLUME_DOWN 音量减小键 25
+
+控制键
+
+KEYCODE_ENTER 回车键 66
+KEYCODE_ESCAPE ESC键 111
+KEYCODE_DPAD_CENTER 导航键 确定键 23
+KEYCODE_DPAD_UP 导航键 向上 19
+KEYCODE_DPAD_DOWN 导航键 向下 20
+KEYCODE_DPAD_LEFT 导航键 向左 21
+KEYCODE_DPAD_RIGHT 导航键 向右 22
+KEYCODE_MOVE_HOME 光标移动到开始键 122
+KEYCODE_MOVE_END 光标移动到末尾键 123
+KEYCODE_PAGE_UP 向上翻页键 92
+KEYCODE_PAGE_DOWN 向下翻页键 93
+KEYCODE_DEL 退格键 67
+KEYCODE_FORWARD_DEL 删除键 112
+KEYCODE_INSERT 插入键 124
+KEYCODE_TAB Tab键 61
+KEYCODE_NUM_LOCK 小键盘锁 143
+KEYCODE_CAPS_LOCK 大写锁定键 115
+KEYCODE_BREAK Break/Pause键 121
+KEYCODE_SCROLL_LOCK 滚动锁定键 116
+KEYCODE_ZOOM_IN 放大键 168
+KEYCODE_ZOOM_OUT 缩小键 169
+
+组合键
+
+KEYCODE_ALT_LEFT Alt+Left
+KEYCODE_ALT_RIGHT Alt+Right
+KEYCODE_CTRL_LEFT Control+Left
+KEYCODE_CTRL_RIGHT Control+Right
+KEYCODE_SHIFT_LEFT Shift+Left
+KEYCODE_SHIFT_RIGHT Shift+Right
+
+基本
+
+KEYCODE_0 按键’0’ 7
+KEYCODE_1 按键’1’ 8
+KEYCODE_2 按键’2’ 9
+KEYCODE_3 按键’3’ 10
+KEYCODE_4 按键’4’ 11
+KEYCODE_5 按键’5’ 12
+KEYCODE_6 按键’6’ 13
+KEYCODE_7 按键’7’ 14
+KEYCODE_8 按键’8’ 15
+KEYCODE_9 按键’9’ 16
+KEYCODE_A 按键’A’ 29
+KEYCODE_B 按键’B’ 30
+KEYCODE_C 按键’C’ 31
+KEYCODE_D 按键’D’ 32
+KEYCODE_E 按键’E’ 33
+KEYCODE_F 按键’F’ 34
+KEYCODE_G 按键’G’ 35
+KEYCODE_H 按键’H’ 36
+KEYCODE_I 按键’I’ 37
+KEYCODE_J 按键’J’ 38
+KEYCODE_K 按键’K’ 39
+KEYCODE_L 按键’L’ 40
+KEYCODE_M 按键’M’ 41
+KEYCODE_N 按键’N’ 42
+KEYCODE_O 按键’O’ 43
+KEYCODE_P 按键’P’ 44
+KEYCODE_Q 按键’Q’ 45
+KEYCODE_R 按键’R’ 46
+KEYCODE_S 按键’S’ 47
+KEYCODE_T 按键’T’ 48
+KEYCODE_U 按键’U’ 49
+KEYCODE_V 按键’V’ 50
+KEYCODE_W 按键’W’ 51
+KEYCODE_X 按键’X’ 52
+KEYCODE_Y 按键’Y’ 53
+KEYCODE_Z 按键’Z’ 54
+```
