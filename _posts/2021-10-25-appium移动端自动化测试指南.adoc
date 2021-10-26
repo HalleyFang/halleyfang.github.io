@@ -241,3 +241,8 @@ KEYCODE_X 按键’X’ 52
 KEYCODE_Y 按键’Y’ 53
 KEYCODE_Z 按键’Z’ 54
 ```
+
+
+## 参考链接
+
+link:https://github.com/appium/appium/blob/master/docs/cn/writing-running-appium[appiumDocs]
