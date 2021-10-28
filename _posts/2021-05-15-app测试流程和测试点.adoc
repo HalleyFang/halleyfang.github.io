@@ -9,8 +9,6 @@ image::/images/test-guide/app_test.png[APP测试点梳理]
 
 //more
 
-
-
 ## UI测试
 
 测试用户界面(如菜单、对话框、窗口和其它可规控件)布局、风格是否满足客户要求、文字是否正确、
