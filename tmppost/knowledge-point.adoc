@@ -1,0 +1,446 @@
+# 知识点
+
+## 面向对象三大特性
+
+* 继承：一般类只能单继承，内部类实现多继承，接口可以多继承
+* 封装：访问权限控制public > protected > 包 > private 内部类也是一种封装
+* 多态：
+** 编译时多态，体现在向上转型和向下转型，通过引用类型判断调用哪个方法（静态分派）。
+** 运行时多态，体现在同名函数通过不同参数实现多种方法（动态分派）。
+
+
+## 基本数据类型
+
+. 基本类型位数，自动装箱，常量池。
+. 例如byte类型是1byte也就是8位，可以表示的数字是-128到127，因为还有一个0，加起来一共是256，也就是2的八次方。
++
+32位和64位机器的int是4个字节也就是32位，char是1个字节就是8位，float是4个字节，double是8个字节，long是8个字节。
+. 基本数据类型的包装类只在数字范围-128到127中用到常量池，会自动拆箱装箱，其余数字范围的包装类则会新建实例。
+
+## String及包装类
+
+. final修饰基本数据类型保证不可变
+. final修饰引用保证引用不能指向别的对象，否则会报错。
+. final修饰类，类的实例分配空间后地址不可变，子类不能重写所有父类方法。因此在cglib动态代理中，不能为一个类的final修饰的函数做代理，因为cglib要将被代理的类设置为父类，然后再生成字节码。
+. final修饰方法，子类不能重写该方法。
+
+## 抽象类和接口
+
+. 抽象类可以有方法实现。 抽象类可以有非final成员变量。 抽象方法要用abstract修饰。 抽象类可以有构造方法，但是只能由子类进行实例化。
+. 接口可以用extends加多个接口实现多继承。 接口只能有public final类型的成员变量。 接口只能有抽象方法，不能有方法体、 接口不能实例化，但是可以作为引用类型。
+
+## 代码块和加载顺序
+
+假设该类是第一次进行实例化。那么有如下加载顺序 静态总是比非静态优先，从早到晚的顺序是： 1. 静态代码块 和 静态成员变量的顺序根据代码位置前后来决定。 2. 代码块和成员变量的顺序也根据代码位置来决定 3. 最后才调用构造方法构造方法
+
+## 包、内部类、外部类
+
+. Java项目一般从src目录开始有com...A.java这样的目录结构。这就是包结构。所以一般编译后的结构是跟包结构一模一样的，这样的结构保证了import时能找到正确的class引用包访问权限就是指同包下的类可见。
++
+import 一般加上全路径，并且使用.*时只包含当前目录的所有类文件，不包括子目录。
+
+. 外部类只有public和default两种修饰，要么全局可访问，要么包内可访问。
+
+. 内部类可以有全部访问权限，因为它的概念就是一个成员变量，所以访问权限设置与一般的成员变量相同。
++
+非静态内部类是外部类的一个成员变量，只跟外部类的实例有关。
++
+静态内部类是独立于外部类存在的一个类，与外部类实例无关，可以通过外部类.内部类直接获取Class类型。
+
+## 异常
+
+. 异常体系的最上层是Throwable类 子类有Error和Exception Exception的子类又有RuntimeException和其他具体的可检查异常。
+
+. Error是jvm完全无法处理的系统错误，只能终止运行。
++
+运行时异常指的是编译正确但运行错误的异常，如数组越界异常，一般是人为失误导致的，这种异常不用try catch，而是需要程序员自己检查。
++
+可检查异常一般是jvm处理不了的一些异常，但是又经常会发生，比如Ioexception，Sqlexception等，是外部实现带来的异常。
+
+. 多线程的异常流程是独立的，互不影响。 大型模块的子模块异常一般需要重新封装成外部异常再次抛出，否则只能看到最外层异常信息，难以进行调试。
++
+日志框架是异常报告的最好帮手，log4j，slf4j中，在工作中必不可少。
+
+## 泛型
+
+. Java中的泛型是伪泛型，只在编译期生效，运行期自动进行泛型擦除，将泛型替换为实际上传入的类型。
++
+泛型类用
++
+```java
+classA {
+
+}
+```
+
+. 这样的形式表示，里面的方法和成员变量都可以用T来表示类型。泛型接口也是类似的，不过泛型类实现泛型接口时可以选择注入实际类型或者是继续使用泛型。
+
+. 泛型方法可以自带泛型比如void <E> go();
++
+泛型可以使用?通配符进行泛化 Object可以接受任何类型
++
+也可以使用 这种方式进行上下边界的限制。
+
+## Class类和Object类
+
+. Java反射的基础是Class类，该类封装所有其他类的类型信息，并且在每个类加载后在堆区生成每个类的一个Class<类名>实例，用于该类的实例化。
+
+. Java中可以通过多种方式获取Class类型，比如A.class,new A().getClass()方法以及Class.forName("com.?.?.A")方法。
+
+. Object是所有类的父类，有着自己的一些私有方法，以及被所有类继承的9大方法。
++
+知乎上有人讨论Object和Class类型谁先加载谁后加载，因为每个类都要继承Object，但是又得先被加载到堆区，事实上，这个问题在JVM初始化时就解决了，没必要多想。
+
+## javac和java
+
+. javac 是编译一个java文件的基本命令，通过不同参数可以完成各种配置，比如导入其他类，指定编译路径等。
+
+. java是执行一个java文件的基本命令，通过参数配置可以以不同方式执行一个java程序或者是一个jar包。
+
+. javap是一个class文件的反编译程序，可以获取class文件的反编译结果，甚至是jvm执行程序的每一步代码实现。
+
+## 反射
+
+. Java反射包reflection提供对Class，Method，field，constructor1 等信息的封装类型。
+
+. 通过这些api可以轻易获得一个类的各种信息并且可以进行实例化，方法调用等。
++
+类中的private参数可以通过setaccessible方法强制获取。
+
+. 反射的作用可谓是博大精深，JDK动态代理生成代理类的字节码后，首先把这个类通过defineclass定义成一个类，然后用class.for(name)会把该类加载到jvm，之后我们就可以通过，A.class.GetMethod()获取其方法，然后通过invoke调用其方法，在调用这个方法时，实际上会通过被代理类的引用再去调用原方法。
+
+## 枚举类
+
+. 枚举类继承Enum并且每个枚举类的实例都是唯一的。
+
+. 枚举类可以用于封装一组常量，取值从这组常量中取，比如一周的七天，一年的十二个月。
+
+. 枚举类的底层实现其实是语法糖，每个实例可以被转化成内部类。并且使用静态代码块进行初始化，同时保证内部成员变量不可变。
+
+## 序列化
+
+. 序列化的类要实现serializable接口
++
+transient修饰符可以保证某个成员变量不被序列化
++
+readObject和writeOject来实现实例的写入和读取。
+
+. 事实上，一些拥有数组变量的类都会把数组设为transient修饰，这样的话不会对整个数组进行序列化，而是利用专门的方法将有数据的数组范围进行序列化，以便节省空间。
+
+## 动态代理
+. jdk自带的动态代理可以代理一个已经实现接口的类。
+
+. cglib代理可以代理一个普通的类。
+
+. 动态代理的基本实现原理都是通过字节码框架动态生成字节码，并且在用defineclass加载类后，获取代理类的实例。
++
+一般需要实现一个代理处理器，用来处理被代理类的前置操作和后置操作。在JDK动态代理中，这个类叫做invocationHandler。
+
+. JDK动态代理首先获取被代理类的方法，并且只获取在接口中声明的方法，生成代理类的字节码后，首先把这个类通过defineclass定义成一个类，然后把该类加载到jvm，之后我们就可以通过，A.class.GetMethod()获取其方法，然后通过invoke调用其方法，在调用这个方法时，实际上会通过被代理类的引用再去调用原方法。
+
+. 而对于cglib动态代理，一般会把被代理类设为代理类的父类，然后获取被代理类中所有非final的方法，通过asm字节码框架生成代理类的字节码，这个代理类很神奇，他会保留原来的方法以及代理后的方法，通过方法数组的形式保存。
++
+cglib的动态代理需要实现一个enhancer和一个interceptor，在interceptor中配置我们需要的代理内容。如果没有配置interceptor，那么代理类会调用被代理类自己的方法，如果配置了interceptor，则会使用代理类修饰过的方法。
+
+## 多线程
+
+这里先不讲juc包里的多线程类。juc相关内容会在Java并发专题讲解。
+
+. 线程的实现可以通过继承Thread类和实现Runable接口 也可以使用线程池。callable配合future可以实现线程中的数据获取。
+
+. Java中的线程有7种状态，new runable running blocked waiting timewaiting terminate
++
+blocked是线程等待其他线程锁释放。 waiting是wait以后线程无限等待其他线程使用notify唤醒 timewating是有限时间地等待被唤醒，也可能是sleep固定时间。
+
+. Thread的join是实例方法，比如a.join(b),则说明a线程要等b线程运行完才会运行。
+
+. o.wait方法会让持有该对象o的线程释放锁并且进入阻塞状态，notify则是持有o锁对象的线程通知其他等待锁的线程获取锁。notify方法并不会释放锁。注意这两个方法都只能在synchronized同步方法或同步块里使用。
+
+. synchronized方法底层使用系统调用的mutex锁，开销较大，jvm会为每个锁对象维护一个等待队列，让等待该对象锁的线程在这个队列中等待。当线程获取不到锁时则让线程阻塞，而其他检查notify以后则会通知任意一个线程，所以这个锁时非公平锁。
+
+. Thread.sleep()，Thread.interrupt()等方法都是类方法，表示当前调用该方法的线程的操作。
++
+一个线程实例连续start两次会抛异常,这是因为线程start后会设置标识，如果再次start则判断为错误。
+
+## IO流
+
+. IO流也是Java中比较重要的一块，Java中主要有字节流，字符流，文件等。其中文件也是通过流的方式打开，读取和写入的。
+
+. IO流的很多接口都使用了装饰者模式，即将原类型通过传入装饰类构造函数的方式，增强原类型，以此获得像带有缓冲区的字节流，或者将字节流封装成字符流等等，其中需要注意的是编码问题，后者打印出来的结果可能是乱码哦。
+
+. IO流与网络编程息息相关，一个socket接入后，我们可以获取它的输入流和输出流，以获取TCP数据包的内容，并且可以往数据报里写入内容，因为TCP协议也是按照流的方式进行传输的，实际上TCP会将这些数据进行分包处理，并且通过差错检验，超时重传，滑动窗口协议等方式，保证了TCP数据包的高效和可靠传输。
+
+## 网络编程
+承接IO流的内容
+
+. IO流与网络编程息息相关，一个socket接入后，我们可以获取它的输入流和输出流，以获取TCP数据包的内容，并且可以往数据报里写入内容，因为TCP协议也是按照流的方式进行传输的，实际上TCP会将这些数据进行分包处理，并且通过差错检验，超时重传，滑动窗口协议等方式，保证了TCP数据包的高效和可靠传输。
+
+. 除了使用socket来获取TCP数据包外，还可以使用UDP的DatagramPacket来封装UDP数据包，因为UDP数据包的大小是确定的，所以不是使用流方式处理，而是需要事先定义他的长度，源端口和目标端口等信息。
+
+. 为了方便网络编程，Java提供了一系列类型来支持网络编程的api，比如URL类，InetAddress类等。
+
+## Java8
+
+. 接口中的默认方法，接口终于可以有方法实现了，使用注解即可标识出默认方法。
+
+. lambda表达式实现了函数式编程，通过注解可以声明一个函数式接口，该接口中只能有一个方法，这个方法正是使用lambda表达式时会调用到的接口。
+
+. Option类实现了非空检验
+
+. 各种api的更新，包括chm，hashmap的实现等
+
+. Stream流概念，实现了集合类的流式访问，可以基于此使用map和reduce并行计算。
+
+
+## jdbc过程
+首先，需要知道使用Java开发任何数据库应用程序都需要4个主要接口：Driver，Connection，Statement和ResultSet。这些接口定义了使用SQL访问数据库的一般架构。访问数据库的Java程序主要有5个步骤，分别是：
+
+.. 加载驱动程序。
+.. 建立连接。
+.. 创建语句。
+.. 执行语句。
+.. 处理ResultSet。
+
+那么就简单说明这5个步骤如何实现：
+
+. 加载驱动程序
++
+在连接到数据库之前，需要加载一个合适的驱动程序。
++
+Class.forname("com.mysql.cj.jdbc.Driver");
++
+驱动程序是一个实现接口java.sql.Driver的具体类。因为我用的数据库是MySQL，所以在括号里填com.mysql.cj.jdbc.Driver，像其他的数据库，会有不同的程序驱动类。
+
+. 建立连接
++
+连接到数据库需要使用到DriverManager类中的静态方法getConnection(databaseURL)，其中databaseURL是数据库在Internet上的唯一标识符。
++
+```java
+Connection connection=DriverManager.getConnection("jdbc:mysql://localhost/Contacts?serverTimezone=UTC", "root", "Cc229654512");
+```
+
+. 创建语句
++
+Statement的对象可以为数据库传输SQL语句用于执行，并把运行结果返回程序。一旦创建Connection对象，就可以创建执行SQL语句的语句。
++
+```java
+Statement statement=connection.createStatement();
+```
+
+. 执行语句
++
+可以使用方法executeUpdate(String sql)来执行数据定义语言或者更新语句，可以使用executeQuery(String sql)来执行SQL查询语句。结果在ResultSet中返回。
++
+```java
+ResultSet resultSet=statement.executeQuery("select Name, PhoneNumber, Email, QQ, Note from Contacts");
+```
+
+. 处理ResultSet
++
+结果集ResultSet可以获得表的当前行，可以使用next方法移动行，可以使用各种get方法获取当前行的值。
++
+```java
+while(resultSet.next())
+
+{
+        System.out.println(resultSet.getString(1)+"\t"+resultSet.getString(2)+"\t"+resultSet.getString(3));
+}
+```
+ 
+
+## socket原理
+
+Socket是什么呢？
+
+       Socket是应用层与TCP/IP协议族（运输层）通信的中间软件抽象层，它是一组接口。在设计模式中，Socket其实就是一个门面模式，它把复杂的TCP/IP协议族隐藏在Socket接口后面，对用户来说，一组简单的接口就是全部，让Socket去组织数据，以符合指定的协议。是“open—write/read—close”模式的一种实现
+
+过程：
+
+.过程
+image::images/tmp/socket.png[过程]
+
+先从服务器端说起。服务器端先初始化Socket，然后与端口绑定(bind)，对端口进行监听(listen)，调用accept阻塞，等待客户端连接。在这时如果有个客户端初始化一个Socket，然后连接服务器(connect)，如果连接成功，这时客户端与服务器端的连接就建立了。客户端发送数据请求，服务器端接收请求并处理请求，然后把回应数据发送给客户端，客户端读取数据，最后关闭连接，一次交互结束。
+
+ 
+
+## java调用对象的几种方法
+
+. 用new语句创建对象，这是最常见的创建对象的方法。
+
+. 还有就是这种，通过工厂方法返回对象
++
+```java
+String emp0 = String.valueOf(23); 
+
+String emp1 = "123";
+```
+
+. 运用反射手段,调用java.lang.Class或者java.lang.reflect.Constructor类的newInstance()实例方法。
++
+```java
+CreateInstance instance = (CreateInstance)Class.forname("com.create.instance.CreateInstance").newInstance();
+
+Employee emp2 = Employee.class.newInstance()
+```
+
+. 运用反序列化手段，调用java.io.ObjectInputStream对象的 readObject()方法。
++
+```java
+objectInputStream in = new ObjectInputStream(new FileInputStream("data.obj"));
+Employee emp4 = (Employee) in.readObject();
+```
+
+. clone()克隆方法。 
++
+```java
+Employee emp5 = (Employee) emp3.clone();
+```
+ 
+
+## hashcode的实现机制
+
+. 为什么使用 hashcode
++
+hashCode 存在的第一重要的原因就是在 HashMap中使用,HashMap 之所以速度快，因为他使用的是散列表，根据 key 的 hashcode 值生成数组下标（通过内存地址直接查找，没有任何判断），时间复杂度完美情况下可以达到 n1（和数组相同，但是比数组用着爽多了，但是需要多出很多内存，相当于以空间换时间）。
+
+. 重写hashcode
++
+使用 String 的 char 数组的数字每次乘以 31 再叠加最后返回，因此，每个不同的字符串，返回的 hashCode 肯定不一样。
+
+. 为什么乘以31
++
+之所以使用 31， 是因为他是一个奇素数。如果乘数是偶数，并且乘法溢出的话，信息就会丢失，因为与2相乘等价于移位运算（低位补0）。使用素数的好处并不很明显，但是习惯上使用素数来计算散列结果。 31 有个很好的性能，即用移位和减法来代替乘法，可以得到更好的性能： 31 * i == (i << 5） - i， 现代的 VM 可以自动完成这种优化。这个公式可以很简单的推导出来。
+
+ 
+
+## 接口的分类
+
+. 单方法接口
+以下是引用片段：
+[2]　public interface Actionlistener{
+public abstract void actionPerformed(ActionEvent event);
+}
+仅且只有一个方法，只有实现了这个接口(重写这个接口中的唯一一个方法)，你才有资格去事件监听器列表里注册(参数为Actionlistener类型)，当事件源变动时，自动调用这个唯一的actionPerformed方法。
+. 标识接口
+是没有任何方法和属性的接口。标识接口不对实现它的类有任何语意上的要求，它仅仅表明了实现它的类属于一个特定的类型(传递)。
+不推荐过多的使用标识接口。
+. 常量接口
+用Java接口来声明一些常量，然后由实现这个接口的类使用这些常量(以前在做画板的时候这么干过)。建议不要模仿这种常量接口的做法。
+
+## Java虚拟机
+
+link:jvm[Java虚拟机]
+
+## java内存泄漏的原因及分析
+定义：内存泄漏是指无用对象（不再使用的对象）持续占有内存或无用对象的内存得不到及时释放，从而造成内存空间的浪费称为内存泄漏。
+
+会发生的场景：
+
+. 静态集合类引起内存泄露：
+
+像HashMap、Vector等的使用最容易出现内存泄露，这些静态变量的生命周期和应用程序一致，他们所引用的所有的对象Object也不能被释放，因为他们也将一直被Vector等引用着。
+
+例:
++
+```java
+
+Static Vector v = new Vector(10);
+
+for (int i = 1; i<100; i++){
+
+Object o = new Object();
+
+v.add(o);
+
+o = null;}//
+```
+
+在这个例子中，循环申请Object 对象，并将所申请的对象放入一个Vector 中，如果仅仅释放引用本身（o=null），那么Vector 仍然引用该对象，所以这个对象对GC 来说是不可回收的。因此，如果对象加入到Vector 后，还必须从Vector 中删除，最简单的方法就是将Vector对象设置为null。
+
+. 当集合里面的对象属性被修改后，再调用remove（）方法时不起作用。
+
+例：
++
+```java
+public static void main(String[] args){
+
+Set<Person> set = new HashSet<Person>();
+
+Person p1 = new Person("唐僧","pwd1",25);
+
+Person p2 = new Person("孙悟空","pwd2",26);
+
+Person p3 = new Person("猪八戒","pwd3",27);
+
+set.add(p1);
+
+set.add(p2);
+
+set.add(p3);
+
+System.out.println("总共有:"+set.size()+" 个元素!"); //结果：总共有:3 个元素!
+
+p3.setAge(2); //修改p3的年龄,此时p3元素对应的hashcode值发生改变
+
+set.remove(p3); //此时remove不掉，造成内存泄漏
+
+set.add(p3); //重新添加，居然添加成功
+
+System.out.println("总共有:"+set.size()+" 个元素!"); //结果：总共有:4 个元素!
+
+for (Person person : set){
+
+System.out.println(person);}}
+```
+
+. 监听器
+
+在java 编程中，我们都需要和监听器打交道，通常一个应用当中会用到很多监听器，我们会调用一个控件的诸如addXXXListener()等方法来增加监听器，但往往在释放对象的时候却没有记住去删除这些监听器，从而增加了内存泄漏的机会。
+
+. 各种连接
+
+比如数据库连接（dataSourse.getConnection()），网络连接(socket)和io连接，除非其显式的调用了其close（）方法将其连接关闭，否则是不会自动被GC 回收的。对于Resultset 和Statement 对象可以不进行显式回收，但Connection 一定要显式回收，因为Connection 在任何时候都无法自动回收，而Connection一旦回收，Resultset 和Statement 对象就会立即为NULL。但是如果使用连接池，情况就不一样了，除了要显式地关闭连接，还必须显式地关闭Resultset Statement 对象（关闭其中一个，另外一个也会关闭），否则就会造成大量的Statement 对象无法释放，从而引起内存泄漏。这种情况下一般都会在try里面去的连接，在finally里面释放连接。
+
+. 内部类和外部模块等的引用
+
+内部类的引用是比较容易遗忘的一种，而且一旦没释放可能导致一系列的后继类对象没有释放。此外程序员还要小心外部模块不经意的引用，例如程序员A 负责A 模块，调用了B 模块的一个方法如：
++
+```java
+public void registerMsg(Object b);
+```
+
+这种调用就要非常小心了，传入了一个对象，很可能模块B就保持了对该对象的引用，这时候就需要注意模块B 是否提供相应的操作去除引用。
+
+. 单例模式
+
+不正确使用单例模式是引起内存泄露的一个常见问题，单例对象在被初始化后将在JVM的整个生命周期中存在（以静态变量的方式），如果单例对象持有外部对象的引用，那么这个外部对象将不能被jvm正常回收，导致内存泄露，考虑下面的例子：
++
+```java
+class A{
+
+public A(){
+
+B.getInstance().setA(this);}....}
+
+//B类采用单例模式
+
+class B{
+
+private A a;
+
+private static B instance=new B();
+
+public B(){}
+
+public static B getInstance(){
+
+return instance;}
+
+public void setA(A a){
+
+this.a=a;}
+
+//getter...}
+```
+
+显然B采用singleton模式，它持有一个A对象的引用，而这个A类的对象将不能被回收。想象下如果A是个比较复杂的对象或者集合类型会发生什么情况
