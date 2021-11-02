@@ -1,5 +1,5 @@
-:page-categories: [selenium]
-:page-tags: [selenium,参考指南]
+:page-categories: [training]
+:page-tags: [training,arithmetic]
 :author: halley.fang
 :doctype: book
 
