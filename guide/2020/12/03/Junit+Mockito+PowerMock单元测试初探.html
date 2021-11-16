@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Junit+mockito+powermock单元测试初探</title>
+    <meta name="description" content="Mockito 是一个流行的 mock 框架，可以与 JUnit 或 TestNG 一起使用。Mockito 允许您创建和配置模拟对象。使用 Mockito 可以极大地简化具有外部依赖项的类的测试开发。">
+    <meta name="keywords" content="mockitopowermock参考指南,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>Junit+mockito+powermock单元测试初探</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2020-12-03
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#mockito" title="Tag: mockito" rel="tag">mockito</a-->
+        <a href="/tag/#mockito" title="Tag: mockito" rel="tag" style="color: blue;">mockito</a>&nbsp;
+    
+        <!--a href="/tag/#powermock" title="Tag: powermock" rel="tag">powermock</a-->
+        <a href="/tag/#powermock" title="Tag: powermock" rel="tag" style="color: blue;">powermock</a>&nbsp;
+    
+        <!--a href="/tag/#%E5%8F%82%E8%80%83%E6%8C%87%E5%8D%97" title="Tag: 参考指南" rel="tag">参考指南</a-->
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>Mockito</code> 是一个流行的 mock 框架，可以与 <code>JUnit</code> 或 <code>TestNG</code> 一起使用。Mockito 允许您创建和配置模拟对象。使用 Mockito 可以极大地简化具有外部依赖项的类的测试开发。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="单元测试">单元测试</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>白盒测试定义：<br>
+　　白盒测试又称结构测试,透明盒测试、逻辑驱动测试或基于代码的测试。白盒测试是一种测试用例设计方法，白盒指的是程序的内部结构和运作机制是可见的。</p>
+</div>
+<div class="paragraph">
+<p>白盒测试的目的：<br>
+　　通过检查软件内部的逻辑结构，对软件中的逻辑路径进行覆盖测试；在程序不同地方设置检查点，检查程序的状态，以确定实际运行状态与预期状态是否一致。</p>
+</div>
+<div class="paragraph">
+<p>白盒测试的方法：大致分为静态方法和动态方法两大类。</p>
+</div>
+<div class="olist upperalpha">
+<ol class="upperalpha">
+<li>
+<p>静态分析：<br>
+　　是一种不执行程序而进行测试的技术。静态分析的主要目的是检查软件的表示和描述是否一致,没有冲突或者没有歧义。</p>
+</li>
+<li>
+<p>动态分析：<br>
+　　当软件系统在模拟或真实的环境中执行前、过程中和执行后,对其行为分析。它显示了一个系统在检查状态下是否正确。在动态分析技术中,最重要的技术是路径和分支测试。</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>说明：本文中不对白盒测试用例设计做详细阐述，后续会在另外的文档中进行详解。</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>单元测试属于白盒测试范畴，应该尽量消除与其他类或系统的耦合性，即解耦。我们可以用模拟的测试依赖来替换真实依赖，测试依赖主要有以下几类：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>一个虚拟对象被传递但从未被使用，即它的方法永远不会被调用。例如，可以使用这样的对象来填充方法的参数列表。</p>
+</li>
+<li>
+<p>伪对象具有可工作的实现，但通常是简化的。例如，内存数据库用于测试，而不是基于 SQL 的数据库。</p>
+</li>
+<li>
+<p>桩(<code>stub</code>)类是接口或类的部分实现，目的是在测试期间使用这个桩类的实例。桩通常不会对测试程序之外的任何东西做出响应。桩还可以记录关于调用的信息。</p>
+</li>
+<li>
+<p>模拟(<code>mock</code>)对象是接口或类的虚拟实现，在其中定义某些方法调用的输出。模拟对象被配置为在测试期间执行特定的行为。他们通常记录与系统的交互，测试可以验证这一点。</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>测试依赖可以传递给其他被测试的对象。您的测试可以验证类在测试期间的正确反应。例如，您可以验证是否调用了模拟对象上的某些方法。这有助于确保您只在运行测试时测试类，并且您的测试不会受到任何副作用的影响。</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>模拟(mock)对象通常需要较少的代码进行配置，因此应该首选模拟对象</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="mock_对象生成">mock 对象生成</h3>
+<div class="paragraph">
+<p>您可以手动(通过代码)创建模拟对象，或者使用模拟框架来模拟这些类。Mock 框架允许您在运行时创建模拟对象并定义它们的行为。模拟对象的经典示例是数据提供程序。在生产中，使用连接到实际数据源的实现。但是对于测试来说，模拟对象模拟数据源并确保测试条件总是相同的。可以将这些模拟对象提供给要测试的类。因此，要测试的类应该避免对外部数据的任何硬依赖。mock 或 mock 框架允许测试预期的与 mock 对象的交互。例如，您可以验证只在模拟对象上调用了某些方法。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="使用_mockito_来模拟对象">使用 Mockito 来模拟对象</h3>
+<div class="paragraph">
+<p><code>Mockito</code> 是一个流行的 mock 框架，可以与 <code>JUnit</code> 或 <code>TestNG</code> 一起使用。Mockito 允许您创建和配置模拟对象。使用 Mockito 可以极大地简化具有外部依赖项的类的测试开发。使用 Mockito 一般过程如下：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>对测试类的依赖进行 Mock</p>
+</li>
+<li>
+<p>针对测试类编写测试代码</p>
+</li>
+<li>
+<p>对测试内容进行验证</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java_项目使用_mockito">Java 项目使用 Mockito</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>添加 Maven 依赖</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">        &lt;dependency&gt;
+            &lt;groupId&gt;org.mockito&lt;/groupId&gt;
+            &lt;artifactId&gt;mockito-core&lt;/artifactId&gt;
+            &lt;version&gt;3.3.3&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+            &lt;artifactId&gt;junit-jupiter-api&lt;/artifactId&gt;
+            &lt;version&gt;5.6.2&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.mockito&lt;/groupId&gt;
+            &lt;artifactId&gt;mockito-junit-jupiter&lt;/artifactId&gt;
+            &lt;version&gt;3.3.3&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>示例参考： <a href="http://gitlab.wire.cn/platform-test/mock-demo.git">本文中示例git库地址</a></p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="创建_mock_对象">创建 mock 对象</h3>
+<div class="paragraph">
+<p>Mockito提供了几种方法来创建模拟对象:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>使用 <code>static mock()</code><br>
+示例 Demo1Test.java</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//静态导入
+import static org.mockito.Mockito.*;
+
+public class Demo1Test {
+
+    @Test
+    public void testMyModel(){
+        String name = RandomString.random();
+        MyModel myModel = mock(MyModel.class);//直接调用mock
+        myModel.setName(name);//执行mock类的一些代码
+        verify(myModel).setName(name);//验证方法是在myModel mock上调用的
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>使用 <code>@Mock</code> 注解<br>
+示例 Demo2Test.java</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.*;
+//@RunWith(MockitoJUnitRunner.class)//初始化mock,继承父类MockitoBaseCase
+public class Demo2Test extends MockitoBaseCase {
+
+    @Mock
+    MyModel myModel;
+
+    @InjectMocks
+    MyCase1 myCase1;
+
+    @Test
+    public void testCase1(){
+        MyModel result = myCase1.case1();
+        assertTrue(!result.getIsBoy());
+        verify(myModel).setIsBoy(true);
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Static imports<br>
+通过添加 <code>org.mockito.Mockito.*;</code> 静态导入，您可以在测试中直接使用诸如 <code>mock()</code> 之类的方法。静态导入允许您调用静态成员，即类的方法和字段，而不指定类。<br>
+使用静态导入还可以极大地提高测试代码的可读性。</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="初始化方式" class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Junit集成Mokito注解有以下种初始化方式：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>@RunWith(MockitoJUnitRunner.class)</p>
+</li>
+<li>
+<p>MockitoAnnotations.initMocks(this)</p>
+</li>
+<li>
+<p>@Rule</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>上面例子中写了 <code>1</code> 初始化mock的方式，方式 <code>2</code> 使用如下:</p>
+</div>
+<div class="paragraph">
+<p>示例 Demo3Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
+
+public class Demo3Test {
+
+    @Before
+    public void init() {
+        MockitoAnnotations.initMocks(this);//其中this就是单元测试所在的类，在initMocks函数中Mockito会根据类中不同的注解（如@Mock, @Spy等）创建不同的mock对象，即初始化工作
+    }
+
+    @Mock
+    MyModel myModel;
+
+    @InjectMocks
+    MyCase1 myCase1;
+
+    @Test
+    public void testCase1(){
+        MyModel result = myCase1.case1();
+        assertTrue(!result.getIsBoy());
+        verify(myModel).setIsBoy(true);
+    }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>方式3使用如下：</p>
+</div>
+<div class="paragraph">
+<p>示例 Demo4Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
+
+public class Demo4Test {
+
+    @Mock
+    MyModel myModel;
+
+    @InjectMocks
+    MyCase1 myCase1;
+
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
+
+    @Test
+    public void testCase1(){
+        MyModel result = myCase1.case1();
+        assertTrue(!result.getIsBoy());
+        verify(myModel).setIsBoy(true);
+    }
+
+}</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="配置测试桩">配置测试桩</h3>
+<div class="paragraph">
+<p>Mockito允许通过API配置它的mock的返回值。未指定的方法调用返回“空”值:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>null for objects</p>
+</li>
+<li>
+<p>0 for numbers</p>
+</li>
+<li>
+<p>false for boolean</p>
+</li>
+<li>
+<p>empty collections for collections</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="when_thenreturn_和_when_thenthrow">when thenReturn 和 when thenThrow</h4>
+<div class="paragraph">
+<p>mock可以根据传入方法的参数返回不同的值，<code>when(…​.).thenReturn(…​.)</code> 方法链用于为具有预定义参数的方法调用指定返回值。您还可以使用像 <code>anyString</code> 或 <code>anyInt</code> 这样的方法来定义依赖于输入类型的返回值。</p>
+</div>
+<div class="paragraph">
+<p>示例 Demo5Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * when thenReturn 示例
+ */
+public class Demo5Test extends MockitoBaseCase {
+
+    @Mock
+    MyModel myModel;
+
+    @Test
+    public void testMyModel(){
+        String name = RandomString.random();
+        when(myModel.getName()).thenReturn(name);
+        assertEquals(myModel.getName(),name);
+        verify(myModel).getName();
+    }
+
+    /**
+     * 测试多个返回
+     */
+    @Test
+    public void testMoreThanOneReturnValue(){
+        String name1 = RandomString.random();
+        String name2 = RandomString.random();
+        when(myModel.getName()).thenReturn(name1).thenReturn(name2);
+        assertEquals(myModel.getName(),name1);//第一次调用返回name1
+        assertEquals(myModel.getName(),name2);//第二次调用返回name2
+        assertEquals(myModel.getName(),name2);//超过定义数则调用返回最后一次的赋值name2
+        verify(myModel,times(3)).getName();
+    }
+
+    /**
+         * 测试抛出异常
+         */
+        @Test
+        public void testThrow(){
+            when(myModel.getName()).thenThrow(new RuntimeException());
+            try {
+                myModel.getName();
+            }catch (Exception e){
+                e.printStackTrace();
+            }finally {
+                verify(myModel,times(1)).getName();
+            }
+        }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="doreturn_when_和_dothrow_when">doReturn when 和 doThrow when</h4>
+<div class="paragraph">
+<p><code>doReturn(…).when(…)methodCall</code> 效果类似于 <code>when(…).then return(…)</code>，主要使用与以下场景：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>对void方法进行打桩</p>
+</li>
+<li>
+<p>对spy对象进行打桩</p>
+</li>
+<li>
+<p>对同一个方法多次进行打桩从而在测试过程中改变mock行为</p>
+</li>
+</ul>
+</div>
+<div id="示例Demo6Test.java" class="paragraph">
+<p>示例 Demo6Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * doReturn when 示例
+ */
+public class Demo6Test extends MockitoBaseCase {
+
+    @Mock
+    MyModel myModel;
+
+    @Spy
+    @InjectMocks
+    MyCase1 myCase1;
+
+    @Test
+    public void testMyCase1(){
+        doReturn(myModel).when(myCase1).case1();
+        assertEquals(myCase1.case1().getAge(),0);
+        verify(myCase1).case1();
+    }
+
+    /**
+     * 测试抛出异常
+     */
+    @Test
+    public void testThrow(){
+        doThrow(new RuntimeException()).when(myCase1).case1();
+        try {
+            myCase1.case1();
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            verify(myCase1,times(1)).case1();
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="spy">用 Spy 包装 Java 对象</h3>
+<div class="paragraph">
+<p><code>@Spy</code> 或 <code>spy()</code> 方法可以用来包装一个真实的对象。除非另外指定，否则每个调用都被委托给对象。</p>
+</div>
+<div class="paragraph">
+<p>代码参照 <a href="#示例Demo6Test.java">[示例Demo6Test.java]</a></p>
+</div>
+<div class="sect3">
+<h4 id="spy_拓展">spy 拓展</h4>
+<div class="paragraph">
+<p>spy和mock的异同：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>得到的对象同样可以进行“监管”，即验证和打桩。</p>
+</li>
+<li>
+<p>如果不对spy对象的methodA打桩，那么调用spy对象的methodA时，会调用真实方法。</p>
+</li>
+<li>
+<p>如果不对mock对象的methodA打桩，将doNothing，且返回默认值（null,0,false）。</p>
+</li>
+</ol>
+</div>
+<div class="sect4">
+<h5 id="场景1">场景1</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TestSubject{
+   public void methodA(){
+      throw new RuntimeException();
+   }
+
+   public void methodB(){
+      System.out.println("methodB begin");
+      methodA();
+      methodC()
+      System.out.println("methodB end");
+   }
+
+   public void methodC(){
+      System.out.println("methodC");
+   }
+}
+
+public class Test{
+   //此用例中使用spy的原因是我要测试的是TestSubject的methodB方法，所以调用methodB时必须执行其
+   //真实的方法体，methodB会调用methodA，methodA会抛异常，所以要绕过methodA
+   @Test
+   public void testMethodB(){
+      TestSubject t = new TestSubject();
+      TestSubject spyT  = Mockito.spy(t);
+      //避免调用mehtodB时抛运行时异常。
+      doNothing().when(spyT).methodA();
+      sptT.methodB();
+   }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="场景2">场景2</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TestSubject{
+   public int methodA(){
+      //根据某成员变量的值去计算得出一个value，这个过程包含了复杂的逻辑和层层方法嵌套调用
+      return value；
+   }
+
+   public void methodB(){
+      int key = methodA();
+      switch（key）{
+         case 0:
+            //do something
+         case 1:
+            //do something
+         case 2:
+            //do something
+      }
+   }
+
+}
+
+public class Test{
+   //此用例中使用spy的原因是我要测试的是TestSubject的methodB方法，所以需要
+   //调用真实对象的methodB，methodB的输入来自methodA的返回值。但是methodA的计算十分复杂，
+   //那么想要methodA返回你想要的值就不那么容易，别人看起来也不直观，不确定methodA否是真的
+   //返回0，1，2。那么就可以对methodA打桩，对真实对象打桩，就要用到spy.
+   @Test
+   public void testMethodB(){
+      TestSubject t = new TestSubject();
+      TestSubject spyT  = Mockito.spy(t);
+      //第一次，第二次，第三次调用methodA时，分别返回0，1，2
+      when(spyT.methodA()).thenReturn(0,1,2);
+      for(int i=0; i&lt;=2; i++){
+         spyT.methodB();
+      }
+      //assert &amp;&amp; verify
+   }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="场景3">场景3</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TestSubject{
+   public void methodA(){
+      System.out.println("methodA");
+   }
+
+   public void methodB(int i){
+      int key；
+      //根据参数i进行复杂运算，得出结果赋值给key
+      switch（key）{
+         case 0:
+            methodA();
+         case 1:
+            methodC();
+         case 2:
+            methodD();
+      }
+   }
+   public void methodC(){
+      System.out.println("methodC");
+   }
+
+   public void methodD(){
+      System.out.println("methodD");
+   }
+
+}
+
+public class Test{
+   //此用例中使用spy的原因是我要测试的是TestSubject的methodB方法，所以需要
+   //调用真实对象的methodB，此例中需要verify输入特定的i,是否能分别走进case 0,1,2,
+   //methodA,C,D方法体内的东西都没法获取并证明methodA,C,D被调用过。那么就只能verify了，
+   //verify只能针对mock对象，其实spy对象，也可以使用verify
+   @Test
+   public void testMethodB(){
+      TestSubject t = new TestSubject();
+      TestSubject spyT  = Mockito.spy(t);
+      //假定输入1，能让key==0
+      spyT.methodB(1);
+      //assert &amp;&amp; verify
+      verify(spyT).methodA();
+   }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="场景4">场景4</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class TestSubject{
+
+   public void methodB(TestObject obj, i){
+      int key；
+      //这方法执行的内容非常必要，所以obj需要真实对象。
+      obj.doImportantThing();
+      //根据参数i进行复杂运算，得出结果赋值给key
+      switch（key）{
+         case 0:
+            LayoutInflater inflater = obj.getLayoutInfalter();
+            ViewGroup v = inflater.inflate(R.layout.complex_layout,null,false);
+            v.setVisibility(View.GONE);
+            //do something can be verify
+         case 1:
+            methodC();
+         case 2:
+            methodD();
+      }
+   }
+   public void methodC(){
+      System.out.println("methodC");
+   }
+
+   public void methodD(){
+      System.out.println("methodD");
+   }
+
+}
+
+public class TestObject{
+   public void doImportantThing(){
+      //do something nessisary for TestSubject
+   }
+   //一个layout文件经常无法inflate出一个ViewGroup，所以很可能你需要该方法返回一个
+   //mock对象，然后你可以随心所欲指定inflate出来的ViewGroup对象
+   public LayoutInflater getLayoutInfalter(){
+      //obtain LayoutInflater
+   }
+}
+
+public class Test{
+   //此用例中使用spy的原因是我要测试的是TestSubject的methodB方法，所以需要
+   //调用真实对象的methodB，此例中需要verify输入1后，是否进入case 0;因为
+   //TestObject#doImportantThing（）中的内容是必须执行的，所以TestObject需要传入的
+   //真实对象，但是R.layout.complex_layout太复杂了，里面都是厂商定制的控件，无法加载，
+   //进入case 0后，将无法正常跑下去，那么可以通过spy TestObject，然后对getLayoutInfalter
+   //打桩，使得返回一个mock LayoutInfalter，然后再对mock LayoutInfalter的inflate方法打桩，
+   //使得不去真正加载R.layout.complex_layout，而是返回一个自己创建好ViewGroup,使得代码
+   //能继续跑下去
+   @Test
+   public void testMethodB(){
+      TestSubject t = new TestSubject();
+      TestSubject spyT  = Mockito.spy(t);
+      TestObject obj = new TestObject();
+      TestObject spyObj = Mockito.spy(obj);
+      LayoutInflater mockInflater = mock(LayoutInflater.class);
+      ViewGroup mockViewGroup = mock(ViewGroup.class);
+      when(mockInflater).inflate(anyInt(), isNull(ViewGroup.class), anyBoolean()).thenReturn(mockViewGroup);
+      doReturn(mockInflater).when(spyObj).getLayoutInfalter();
+      //假定输入1，能让key==0
+      spyT.methodB(1);
+      //assert &amp;&amp; verify
+      verify(mockViewGroup).setVisibility(View.GONE);
+      //verify other
+   }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>总而言之，如果你想对一个真实对象的某个方法打桩( doReturn().when().method() )，verify真实对象的public方法( verify().method() )，绕过真实对象的某个public方法( doNothing().when().method() ),你可以使用spy后的对象，如：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">TestSubject t = new TestSubject();
+TestSubject spyT = Mockito.spy(t);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>特别需要注意的是，t和spyT是两个不同的对象，后面的代码必须要使用spyT，打桩才有效，才能verify TestSubject的方法。如果你只是spy(t),而后面的代码仍然调用t.methodB()的话，则打桩无效，无法verify。而要是保证调用的是spyT.methodB()。</p>
+</div>
+<div class="paragraph">
+<p>对于@Spy，如果发现修饰的变量是 null，会自动调用类的无参构造函数来初始化。所以下面两种写法是等价的：如果没有无参构造函数，必须使用写法2。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 写法1
+@Spy
+private ExampleService spyExampleService;
+
+// 写法2
+@Spy
+private ExampleService spyExampleService = new ExampleService();</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="verify_验证模拟对象上的调用">Verify 验证模拟对象上的调用</h3>
+<div class="paragraph">
+<p>Mockito跟踪所有的方法调用及其对mock对象的参数。可以在模拟对象上使用 <code>verify()</code> 方法来验证是否满足指定的条件。例如，您可以验证是否使用某些参数调用了某个方法。这种测试有时被称为行为测试。行为测试不检查方法调用的结果，但它检查使用正确的参数调用方法。如果您不关心值，可以使用 <code>anyX</code>，例如 <code>anyInt</code> 、<code>anyString()</code> 或 <code>any(YourClass.class)</code> 方法。</p>
+</div>
+<div class="paragraph">
+<p>示例 Demo7Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.mockito.Mockito.*;
+
+/**
+ * verify 示例
+ */
+public class Demo7Test extends MockitoBaseCase {
+
+    @Mock
+    MyModel myModel;
+
+    @Test
+    public void testVerify(){
+        myModel.getName();
+        myModel.getAge();
+        myModel.getAge();
+        myModel.getAge();
+
+        // verify记录着这个模拟对象调用了什么方法，调用了多少次，never() 没有被调用，相当于 times(0)，atLeast(N) 至少被调用 N 次，atLeastOnce() 相当于 atLeast(1)，atMost(N) 最多被调用 N 次
+        // 参数匹配也可以为：verify(mock).someMethod(anyInt(), anyString());
+        verify(myModel).getName();
+        verify(myModel,times(1)).getName();
+        verify(myModel, never()).getIsBoy();
+        verify(myModel, atLeastOnce()).getName();
+        verify(myModel, atLeast(2)).getAge();
+        verify(myModel, atMost(3)).getAge();
+        // This let's you check that no other methods where called on this object.
+        // You call it after you have verified the expected method calls.
+        verifyNoMoreInteractions(myModel);
+    }
+
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="使用_injectmocks_进行依赖注入">使用 @InjectMocks 进行依赖注入</h3>
+<div class="paragraph">
+<p><code>@InjectMocks</code> 注释，它尝试根据类型进行构造函数、方法或字段依赖注入,其余用@Mock（或@Spy）注解创建的mock将被注入到用该实例中。例如，假设您有以下类。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyCase2 {
+
+    private MyModel myModel;
+    private MyCase1 myCase1;
+
+    public MyCase2(MyModel myModel, MyCase1 myCase1) {
+        super();
+        this.myModel = myModel;
+        this.myCase1 = myCase1;
+    }
+
+    public void initialize() {
+        myCase1.case1();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这个类可以通过Mockito来构造，它的依赖关系可以通过模仿对象来实现，如下面的代码片段所示。</p>
+</div>
+<div class="paragraph">
+<p>示例 Demo8Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.mockito.Mockito.*;
+
+/**
+ * InjectMocks 示例
+ */
+public class Demo8Test extends MockitoBaseCase {
+
+    @Mock
+    MyModel myModel;
+
+    @Spy
+    @InjectMocks
+    MyCase1 myCase1;
+
+    @InjectMocks
+    MyCase2 myCase2;
+
+    @Test
+    public void testVerify(){
+        doReturn(myModel).when(myCase1).case1();
+        myCase2.initialize();
+        verify(myCase1).case1();
+    }
+
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="argument_matchers_参数匹配器">Argument matchers 参数匹配器</h3>
+<div class="paragraph">
+<p>参数匹配器可以让打桩和验证变得更加灵活和方便，匹配器例如：anyString()，any()等。注意：当传参中有有一个参数使用了参数匹配器，则其他的传参也必须是参数匹配器。</p>
+</div>
+<div class="paragraph">
+<p>示例 Demo9Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class Demo9Test extends MockitoBaseCase {
+
+    @Spy
+    MyCase1 case1;
+
+    @Test
+    public void testMatchers(){
+        String str = RandomString.random();
+        doReturn(str).when(case1).matchers(anyString(),ArgumentMatchers.&lt;MyModel&gt;any());
+        String result = case1.matchers(anyString(),ArgumentMatchers.&lt;MyModel&gt;any());
+        assertEquals(result,str);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="argumentcaptor_参数获取">ArgumentCaptor 参数获取</h3>
+<div class="paragraph">
+<p><code>ArgumentCaptor</code> 类允许在验证期间访问方法调用的参数。这允许捕获方法调用的这些参数，并在测试中使用它们。</p>
+</div>
+<div class="paragraph">
+<p>示例 Demo10Test.java</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.mockito.Mockito.*;
+
+/**
+ * captor.capture() 示例
+ */
+public class Demo10Test extends MockitoBaseCase {
+
+    @Captor
+    private ArgumentCaptor&lt;Integer&gt; captor;
+
+    @Mock
+    MyModel myModel;
+
+    @Test
+    public void testArgumentCaptor(){
+        myModel.setAge(10);
+        verify(myModel).setAge(captor.capture());
+    }
+
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="answers">Answers</h3>
+<div class="paragraph">
+<p>当遇到一些比较复杂的结果时可以定义一个 <code>Answers</code> 对象。当 <code>thenReturn</code> 每次返回一个预定义的值时，通过 <code>answers</code> 您可以根据提供给桩方法的参数计算响应。如果您的桩方法要对其中一个参数调用一个函数，或者如果您的方法要返回第一个参数以允许方法链接，那么这将非常有用。对于后者，存在一个静态方法。还请注意，有不同的方式配置一个 <code>answers</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.mockito.AdditionalAnswers.returnsFirstArg;
+
+@Test
+public final void answerTest() {
+    // with doAnswer():
+    doAnswer(returnsFirstArg()).when(list).add(anyString());
+    // with thenAnswer():
+    when(list.add(anyString())).thenAnswer(returnsFirstArg());
+    // with then() alias:
+    when(list.add(anyString())).then(returnsFirstArg());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>或者如果你需要回调你的参数:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Test
+public final void callbackTest() {
+    ApiService service = mock(ApiService.class);
+    when(service.login(any(Callback.class))).thenAnswer(i -&gt; {
+        Callback callback = i.getArgument(0);
+        callback.notify("Success");
+        return null;
+    });
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>甚至可以模仿 <code>DAO</code> 这样的持久性服务，但是如果您的答案变得过于复杂，您应该考虑创建一个伪类而不是模仿类</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">List&lt;User&gt; userMap = new ArrayList&lt;&gt;();
+UserDao dao = mock(UserDao.class);
+when(dao.save(any(User.class))).thenAnswer(i -&gt; {
+    User user = i.getArgument(0);
+    userMap.add(user.getId(), user);
+    return null;
+});
+when(dao.find(any(Integer.class))).thenAnswer(i -&gt; {
+    int id = i.getArgument(0);
+    return userMap.get(id);
+});</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mocking_final_classes">Mocking final classes</h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Mockito Mocking final classes 实际上是使用的 PowerMock 进行的代理，所以建议直接使用 PowerMock</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>这个功能默认是隐藏关闭的，要开启则需要在 <code>src/test/resources/mockito-extensions/</code> 或者 <code>src/mockito-extensions/</code> 目录下创建 <code>org.mockito.plugins.MockMaker</code> 文件，在文件中加入以下内容:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">mock-maker-inline</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>配置完成后就可以mock final class了</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">final class FinalClass {
+    public final String finalMethod() { return "something"; }
+}
+
+@Test
+public final void mockFinalClassTest() {
+     FinalClass instance = new FinalClass();
+
+     FinalClass mock = mock(FinalClass.class);
+     when(mock.finalMethod()).thenReturn("that other thing");
+
+     assertNotEquals(mock.finalMethod(), instance.finalMethod());
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java_项目使用_powermock">Java 项目使用 PowerMock</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Mockito不能模拟静态方法。为此，您可以使用 <code>Powermock</code>。PowerMock提供了一个名为 <code>PowerMockito</code> 的类，用于创建模拟/对象/类并初始化验证和期望，您还可以使用Mockito设置和验证期望(例如 <code>times()</code>、<code>anyInt()</code>)。</p>
+</div>
+<div class="paragraph">
+<p>maven配置</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.powermock&lt;/groupId&gt;
+    &lt;artifactId&gt;powermock-module-junit4&lt;/artifactId&gt;
+    &lt;version&gt;2.0.7&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.powermock&lt;/groupId&gt;
+    &lt;artifactId&gt;powermock-api-mockito2&lt;/artifactId&gt;
+    &lt;version&gt;2.0.7&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.powermock&lt;/groupId&gt;
+    &lt;artifactId&gt;powermock-module-junit4-rule-agent&lt;/artifactId&gt;
+    &lt;version&gt;2.0.7&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// PowerMock有两个重要的注解：
+      –@RunWith(PowerMockRunner.class)
+      –@PrepareForTest( { YourClassWithEgStaticMethod.class })
+     // 如果你的测试用例里没有使用注解@PrepareForTest，那么可以不用加注解@RunWith(PowerMockRunner.class)，反之亦然。当你需要使用PowerMock强大功能（Mock静态、final、私有方法等）的时候，就需要加注解@PrepareForTest。</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="编写powermock用例步骤">编写powermock用例步骤</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>类上面先写这两个注解@RunWith(PowerMockRunner.class)、@PrepareForTest(StudentService.class)</p>
+</li>
+<li>
+<p>先模拟一个假对象即studentdao方法中的局部变量</p>
+</li>
+<li>
+<p>用无参的方式new对象</p>
+</li>
+<li>
+<p>再模拟这个对象被调用时，是否有返回，有返回值给出默认值，没有用doNothing()</p>
+</li>
+<li>
+<p>验证有返回值使用assertEquals即可，无返回值使用Mockito.verify验证</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>有以下待测试类：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyCase4 {
+
+    @Autowired
+    MyCase3 myCase3;
+
+    public String caseStatic(){
+       return MyCase3.caseStatic();
+    }
+
+    public Boolean caseFinal() {
+        return myCase3.caseFinal();
+    }
+
+    public Boolean casePrivate() {
+        return myCase3.casePrivate();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>依赖类：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyCase3 {
+
+    public static String caseStatic(){
+        return "";
+    }
+
+    public final Boolean caseFinal(){
+        return true;
+    }
+
+    Boolean casePrivate(){
+        return false;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>以下测试示例代码参见示例 Demo11Test.java</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mock静态方法">Mock静态方法</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.junit.Assert.assertEquals;
+import static org.powermock.api.mockito.PowerMockito.*;
+
+@PrepareForTest(MyCase3.class)
+public class Demo11Test extends PowerMockBaseCase {
+
+  @Test
+  public void testStatic() {
+      mockStatic(MyCase3.class);
+      String str = RandomString.random();
+      when(MyCase3.caseStatic()).thenReturn(str);
+      String result = case4.caseStatic();
+      assertEquals(result, str);
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mock_final方法">Mock Final方法</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Test
+    public void testFinal() {
+        when(case3.caseFinal()).thenReturn(true);
+        Boolean result = case4.caseFinal();
+        assertTrue(result);
+    }</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mock_方法内部new出来的对象模拟构造函数">Mock 方法内部new出来的对象（模拟构造函数）</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Test
+    public void testVoid() throws Exception {
+        whenNew(MyCase3.class).withNoArguments().thenReturn(case3);
+        MyCase3 testCase = new MyCase3();
+        when(testCase.caseFinal()).thenReturn(false);
+        Boolean result = testCase.caseFinal();
+        assertTrue(!result);
+    }</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mock_private方法">Mock Private方法</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Test
+    public void testPrivate() throws Exception {
+        when(case3, "casePrivate").thenCallRealMethod();
+        Boolean result = case4.casePrivate();
+        assertTrue(!result);
+    }</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="单元测试运行">单元测试运行</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="junit_test">Junit test</h3>
+<div class="paragraph">
+<p>IntelliJ IDEA 自带了 <code>jupiter-api</code> 实现，连 <code>jnit-jupiter-engine</code> 都可以不要。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="mvn_test">mvn test</h3>
+<div class="paragraph">
+<p>若要用 <code>mvn test</code> 在控制台下运行测试用例，还要为 <code>maven-surefire-plugin</code> 加上一个内部依赖，在 <code>pom.xml</code> 文件中</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;2.21.0&lt;/version&gt;
+            &lt;dependencies&gt;
+                &lt;dependency&gt;
+                    &lt;groupId&gt;org.junit.platform&lt;/groupId&gt;
+                    &lt;artifactId&gt;junit-platform-surefire-provider&lt;/artifactId&gt;
+                    &lt;version&gt;1.2.0&lt;/version&gt;
+                &lt;/dependency&gt;
+            &lt;/dependencies&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>然后执行控制台命令</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">mvn test</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="集成jacoco和sonar">集成Jacoco和Sonar</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>maven配置</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.powermock&lt;/groupId&gt;
+            &lt;artifactId&gt;powermock-module-junit4&lt;/artifactId&gt;
+            &lt;version&gt;2.0.7&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;org.powermock&lt;/groupId&gt;
+        &lt;artifactId&gt;powermock-api-mockito2&lt;/artifactId&gt;
+        &lt;version&gt;2.0.7&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+      &lt;/dependency&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;org.powermock&lt;/groupId&gt;
+        &lt;artifactId&gt;powermock-module-junit4-rule-agent&lt;/artifactId&gt;
+        &lt;version&gt;2.0.7&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+      &lt;/dependency&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;junit&lt;/groupId&gt;
+        &lt;artifactId&gt;junit&lt;/artifactId&gt;
+        &lt;version&gt;4.13.1&lt;/version&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+      &lt;/dependency&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;org.jacoco&lt;/groupId&gt;
+        &lt;artifactId&gt;org.jacoco.agent&lt;/artifactId&gt;
+        &lt;version&gt;0.8.6&lt;/version&gt;
+        &lt;classifier&gt;runtime&lt;/classifier&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+      &lt;/dependency&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;org.codehaus.sonar-plugins.java&lt;/groupId&gt;
+        &lt;artifactId&gt;sonar-jacoco-plugin&lt;/artifactId&gt;
+        &lt;version&gt;2.3&lt;/version&gt;
+      &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    ...
+    &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+        &lt;configuration&gt;
+          &lt;systemPropertyVariables&gt;
+            &lt;jacoco-agent.destfile&gt;target/jacoco.exec&lt;/jacoco-agent.destfile&gt;
+          &lt;/systemPropertyVariables&gt;
+          &lt;!--暂时跳过测试代码的编译和运行--&gt;
+          &lt;skip&gt;false&lt;/skip&gt;
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.jacoco&lt;/groupId&gt;
+        &lt;artifactId&gt;jacoco-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;0.8.6&lt;/version&gt;
+        &lt;executions&gt;
+          &lt;execution&gt;
+            &lt;id&gt;default-instrument&lt;/id&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;instrument&lt;/goal&gt;
+            &lt;/goals&gt;
+          &lt;/execution&gt;
+          &lt;execution&gt;
+            &lt;id&gt;default-restore-instrumented-classes&lt;/id&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;restore-instrumented-classes&lt;/goal&gt;
+            &lt;/goals&gt;
+          &lt;/execution&gt;
+          &lt;execution&gt;
+            &lt;id&gt;report&lt;/id&gt;
+            &lt;phase&gt;prepare-package&lt;/phase&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;report&lt;/goal&gt;
+            &lt;/goals&gt;
+          &lt;/execution&gt;
+        &lt;/executions&gt;
+      &lt;/plugin&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.sonarsource.scanner.maven&lt;/groupId&gt;
+        &lt;artifactId&gt;sonar-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;3.7.0.1746&lt;/version&gt;
+      &lt;/plugin&gt;
+      ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>执行命令：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">mvn clean verify sonar:sonar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>单元测试结果如图：</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/unitest/u1.png" alt="u1">
+</div>
+<div class="title">Figure 1. 单元测试结果</div>
+</div>
+<div class="paragraph">
+<p>覆盖率查看如图：</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/unitest/c1.png" alt="c1">
+</div>
+<div class="title">Figure 2. 覆盖率视图</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/unitest/c2.png" alt="c2">
+</div>
+<div class="title">Figure 3. 覆盖率详情</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>sonar配置以及覆盖率分析详细在其他blog中进行详述。</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="gitlab_ci_持续集成">GitLab CI 持续集成</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>GitLab CI 持续集成后续在其他文档中进行详细描述。</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="附录">附录</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="参考链接">参考链接</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/powermock/powermock/wiki/PowerMock-Configuration">powermock</a></p>
+</li>
+<li>
+<p><a href="https://www.javadoc.io/doc/org.mockito/mockito-core/2.7.17/org/mockito/Mockito.html#">mokito</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="usercontroller_java_测试代码示例">UserController.java 测试代码示例</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>UserController.java 测试代码示例</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.core.env.Environment;
+import org.springframework.web.context.request.async.DeferredResult;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({UserController.class,SecurityUtil.class, MetricsUtil.class})
+public class UserControllerPowermockTest{
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
+
+    @Mock
+    private TenantUser tenantUser;
+
+    @Mock
+    private MenuService menuService;
+
+    @Mock
+    private PreferenceService preferenceService;
+
+    @Mock
+    private WireProperties WireProperties;
+
+    @Mock
+    private TenantManager tenantManager;
+
+    @Mock
+    Environment env;
+
+    @Mock
+    private TenantProjectService projectService;
+
+    @Spy
+    @InjectMocks
+    private UserController spyUserController = new UserController();
+
+    @Before
+    public void init() throws Exception {
+        mockStatic(SecurityUtil.class);
+        when(SecurityUtil.currentUser()).thenReturn(tenantUser);
+        when(tenantUser.getUsername()).thenReturn("testname");
+        when(tenantUser.getDomain()).thenReturn("testname");
+        when(tenantUser.getFullName()).thenReturn("testname");
+        when(tenantUser.getCommonName()).thenReturn("testname");
+        when(tenantUser.isAdmin()).thenReturn(true);
+        when(tenantUser.getRole()).thenReturn("testname");
+        List&lt;String&gt; list = new ArrayList&lt;&gt;();
+        list.add("test");
+        list.add("admin");
+        when(tenantUser.getRoles()).thenReturn(list);
+        doReturn("20MB").when(env).getProperty("spring.servlet.multipart.max-file-size");
+        doReturn("100").when(env).getProperty("spring.servlet.multipart.max-request-size");
+//        PowerMockito.doReturn(null).when(spyUserController,"buildAppConfigData",WireProperties);
+//        PowerMockito.doReturn(null).when(spyUserController,"buildMultipartConfigData",env);
+        Map&lt;String, Object&gt; ext = new HashMap&lt;&gt;();
+        ext.put("ext","ext test");
+        when(tenantUser.getExt()).thenReturn(ext);
+    }
+
+    /**
+     * 测试 UserController user方法
+     * @throws Exception
+     * @authour Halley.Fang
+     */
+    @Test
+    public void testUser() throws Exception {
+        Map&lt;String, Object&gt; preferences = new HashMap&lt;&gt;();
+        preferences.put("client.test","v test");
+        doReturn(preferences).when(preferenceService).getValuesByKeyPrefix(Mockito.anyString(),Mockito.anyString(),Mockito.anyString());
+        mockStatic(MetricsUtil.class);
+        final ResponseData[] rsp = new ResponseData[1];
+        when(MetricsUtil.timerRecord(Mockito.anyString(),Mockito.anyObject(),Mockito.any(Supplier.class))).thenAnswer(
+                i -&gt; {
+                    Supplier s = (Supplier) i.getArguments()[2];
+                    if(null != s){
+                        rsp[0] = (ResponseData) s.get();
+                    }
+                    return rsp[0];
+                } );
+        doAnswer(i -&gt; {
+            HttpService service = (HttpService) i.getArguments()[2];
+            if(null != service) {
+                service.service(request, response);
+            }
+            DeferredResult deferredResult = new DeferredResult();
+            deferredResult.setResult("user test");
+            return deferredResult;
+        }).when(spyUserController).runWithDefer(Mockito.anyObject(),Mockito.anyObject(),Mockito.any(HttpService.class));
+        //调用测试
+        DeferredResult result = spyUserController.user(request, response);
+        //断言
+        assertEquals("user test", result.getResult().toString());
+        String rsp_data = "{commonName=testname, role=testname, appConfig={wire.jod-converter.enabled=false, wire.production-mode=false}, domain=testname, roles=[test, admin], preference={client.test=v test, client.version=[]}, multipartConfig={spring.servlet.multipart.max-request-size=100, spring.servlet.multipart.max-file-size=20480KB}, name=testname, admin=true, userExt={ext=ext test}, username=testname}";
+        assertEquals(rsp_data,rsp[0].getData().toString());
+        //验证
+        verify(spyUserController,times(1)).user(request,response);
+        verify(spyUserController,times(1)).runWithDefer(Mockito.anyObject(),Mockito.anyObject(),Mockito.any(HttpService.class));
+    }
+
+    /**
+     * 测试 UserController user方法 if分支测试
+     * @throws Exception
+     * @authour Halley.Fang
+     */
+    @Test
+    public void testUser2() throws Exception {
+        Map&lt;String, Object&gt; preferences = new HashMap&lt;&gt;();
+        preferences.put("client.version","v test");
+        doReturn(preferences).when(preferenceService).getValuesByKeyPrefix(Mockito.anyString(),Mockito.anyString(),Mockito.anyString());
+        mockStatic(MetricsUtil.class);
+        final ResponseData[] rsp = new ResponseData[1];
+        when(MetricsUtil.timerRecord(Mockito.anyString(),Mockito.anyObject(),Mockito.any(Supplier.class))).thenAnswer(
+                i -&gt; {
+                    Supplier s = (Supplier) i.getArguments()[2];
+                    if(null != s){
+                        rsp[0] = (ResponseData) s.get();
+                    }
+                    return rsp[0];
+                } );
+        doAnswer(i -&gt; {
+            HttpService service = (HttpService) i.getArguments()[2];
+            if(null != service) {
+                service.service(request, response);
+            }
+            DeferredResult deferredResult = new DeferredResult();
+            deferredResult.setResult("user test");
+            return deferredResult;
+        }).when(spyUserController).runWithDefer(Mockito.anyObject(),Mockito.anyObject(),Mockito.any(HttpService.class));
+        //调用测试
+        DeferredResult result = spyUserController.user(request, response);
+        //断言
+        assertEquals("user test", result.getResult().toString());
+        String rsp_data = "{commonName=testname, role=testname, appConfig={wire.jod-converter.enabled=false, wire.production-mode=false}, domain=testname, roles=[test, admin], preference={client.version=v test}, multipartConfig={spring.servlet.multipart.max-request-size=100, spring.servlet.multipart.max-file-size=20480KB}, name=testname, admin=true, userExt={ext=ext test}, username=testname}";
+        assertEquals(rsp_data,rsp[0].getData().toString());
+        //验证
+        verify(spyUserController,times(1)).user(request,response);
+        verify(spyUserController,times(1)).runWithDefer(Mockito.anyObject(),Mockito.anyObject(),Mockito.any(HttpService.class));
+    }
+
+    /**
+     * 测试 UserController menu方法
+     * @throws Exception
+     * @authour Halley.Fang
+     */
+    @Test
+    public void testMenu() throws Exception {
+        when(menuService.getMenu(Mockito.anyObject(),Mockito.anyList())).thenReturn(null);
+        mockStatic(MetricsUtil.class);
+        final ResponseData[] rsp = new ResponseData[1];
+        when(MetricsUtil.timerRecord(Mockito.anyString(),Mockito.anyObject(),Mockito.any(Supplier.class))).thenAnswer(
+                i -&gt; {
+                    Supplier s = (Supplier) i.getArguments()[2];
+                    if(null != s){
+                        rsp[0] = (ResponseData) s.get();
+                    }
+                    return rsp[0];
+                } );
+        doAnswer(i -&gt; {
+            HttpService service = (HttpService) i.getArguments()[2];
+            if(null != service) {
+                service.service(request, response);
+            }
+            DeferredResult deferredResult = new DeferredResult();
+            deferredResult.setResult("menu test");
+            return deferredResult;
+        }).when(spyUserController).runWithDefer(Mockito.anyObject(),Mockito.anyObject(),Mockito.any(HttpService.class));
+        //调用测试
+        DeferredResult result = spyUserController.menu(request, response);
+        //断言
+        assertEquals("menu test", result.getResult().toString());
+        String rsp_data = "{admin=true, menu=null, favorite_menus=[]}";
+        assertEquals(rsp_data,rsp[0].getData().toString());
+        //验证
+        verify(spyUserController,times(1)).menu(request,response);
+        verify(spyUserController,times(1)).runWithDefer(Mockito.anyObject(),Mockito.anyObject(),Mockito.any(HttpService.class));
+    }
+    }</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">Selenium使用指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/guide/2020/11/11/%E7%99%BD%E7%9B%92%E6%B5%8B%E8%AF%95%E6%96%B9%E6%B3%95.html">白盒测试方法</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/training/2021/03/01/%E5%86%92%E6%B3%A1%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95.html">冒泡排序算法及优化算法</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

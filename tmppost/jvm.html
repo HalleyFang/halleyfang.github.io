@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>halley.fang 个人博客</title>
+    <meta name="description" content="halley.fang 个人博客">
+    <meta name="keywords" content=" ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/tmppost/jvm.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1></h1>
+        <hr>
+        <h1 id="jvm">Java虚拟机</h1>
+<div class="sect1">
+<h2 id="jvm生命周期">JVM生命周期</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>启动。启动一个Java程序时，一个JVM实例就产生了，任何一个拥有public static void main(String[] args)函数的class都可以作为JVM实例运行的起点。<br>
+运行。main()作为该程序初始线程的起点，任何其他线程均由该线程启动。<br>
+消亡。当程序中的所有非守护线程都终止时，JVM才退出；若安全管理器允许，程序也可以使用Runtime类或者System.exit()来退出。<br>
+　　一个运行中的Java虚拟机有着一个清晰的任务：执行Java程序。程序开始执行时他才运行，程序结束时他就停止。你在同一台机器上运行三个程序，就会有三个运行中的Java虚拟机。 Java虚拟机总是开始于一个main()方法，这个方法必须是公有、返回void、直接受一个字符串数组。在程序执行时，你必须给Java虚拟机指明这个包换main()方法的类名。main()方法是程序的起点，他被执行的线程初始化为程序的初始线程。程序中其他的线程都由他来启动。</p>
+</div>
+<div class="paragraph">
+<p>　　Java中的线程分为两种：守护线程 （daemon）和普通线程（non-daemon）。守护线程是Java虚拟机自己使用的线程，比如负责垃圾收集的线程就是一个守护线程。当然，你也可以把自己的程序设置为守护线程。包含main()方法的初始线程不是守护线程。</p>
+</div>
+<div class="paragraph">
+<p>　　只要Java虚拟机中还有普通的线程在执行，Java虚拟机就不会停止。如果有足够的权限，你可以调用exit()方法终止程序。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="jvm体系结构">JVM体系结构</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>类装载器（ClassLoader）（用来装载.class文件）</p>
+</li>
+<li>
+<p>执行引擎（执行字节码，或者执行本地方法）</p>
+</li>
+<li>
+<p>运行时数据区（方法区、堆、java栈、PC寄存器、本地方法栈）</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="jvm运行时数据区">JVM运行时数据区</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="java堆heap">Java堆(Heap)</h3>
+<div class="paragraph">
+<p>被所有线程共享的一块内存区域，在虚拟机启动时创建<br>
+用来存储对象实例<br>
+可以通过-Xmx和-Xms控制堆的大小<br>
+OutOfMemoryError异常：当在堆中没有内存完成实例分配，且堆也无法再扩展时。<br>
+　　java堆是垃圾收集器管理的主要区域。java堆还可以细分为：新生代（New/Young）、旧生代/年老代（Old/Tenured）。持久代（Permanent）在方法区，不属于Heap。</p>
+</div>
+<div class="paragraph">
+<p>新生代：新建的对象都由新生代分配内存。常常又被划分为Eden区和Survivor区。Eden空间不足时会把存活的对象转移到Survivor。新生代的大小可由-Xmn控制，也可用-XX:SurvivorRatio控制Eden和Survivor的比例。</p>
+</div>
+<div class="paragraph">
+<p>旧生代：存放经过多次垃圾回收仍然存活的对象。</p>
+</div>
+<div class="paragraph">
+<p>持久代：存放静态文件，如今Java类、方法等。持久代在方法区，对垃圾回收没有显著影响。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="方法区">方法区</h3>
+<div class="paragraph">
+<p>线程间共享<br>
+用于存储已被虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据<br>
+OutOfMemoryError异常：当方法区无法满足内存的分配需求时<br>
+运行时常量池</p>
+</div>
+<div class="paragraph">
+<p>方法区的一部分<br>
+用于存放编译期生成的各种字面量与符号引用，如String类型常量就存放在常量池<br>
+OutOfMemoryError异常：当常量池无法再申请到内存时</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="java虚拟机栈vm_stack">java虚拟机栈（VM Stack）</h3>
+<div class="paragraph">
+<p>线程私有，生命周期与线程相同<br>
+存储方法的局部变量表(基本类型、对象引用)、操作数栈、动态链接、方法出口等信息。<br>
+java方法执行的内存模型，每个方法执行的同时都会创建一个栈帧，每一个方法被调用直至执行完成的过程，就对应着一个栈帧在虚拟机栈中从入栈到出栈的过程。<br>
+StackOverflowError异常：当线程请求的栈深度大于虚拟机所允许的深度<br>
+OutOfMemoryError异常：如果栈的扩展时无法申请到足够的内存<br>
+　　JVM栈是线程私有的，每个线程创建的同时都会创建JVM栈，JVM栈中存放的为当前线程中局部基本类型的变量、部分的返回结果以及Stack Frame。其他引用类型的对象在JVM栈上仅存放变量名和指向堆上对象实例的首地址。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="本地方法栈native_method_stack">本地方法栈（Native Method Stack）</h3>
+<div class="paragraph">
+<p>与虚拟机栈相似，主要为虚拟机使用到的Native方法服务，在HotSpot虚拟机中直接把本地方法栈与虚拟机栈二合一</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="程序计数器program_counter_register">程序计数器（Program Counter Register）</h3>
+<div class="paragraph">
+<p>当前线程所执行的字节码的行号指示器<br>
+当前线程私有<br>
+不会出现OutOfMemoryError情况</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="直接内存direct_memory">直接内存（Direct Memory）</h3>
+<div class="paragraph">
+<p>直接内存并不是虚拟机运行的一部分，也不是Java虚拟机规范中定义的内存区域，但是这部分内存也被频繁使用<br>
+NIO可以使用Native函数库直接分配堆外内存，堆中的DirectByteBuffer对象作为这块内存的引用进行操作<br>
+大小不受Java堆大小的限制，受本机(服务器)内存限制<br>
+OutOfMemoryError异常：系统内存不足时<br>
+　　总结：Java对象实例存放在堆中；常量存放在方法区的常量池；虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据放在方法区；以上区域是所有线程共享的。栈是线程私有的，存放该方法的局部变量表(基本类型、对象引用)、操作数栈、动态链接、方法出口等信息。</p>
+</div>
+<div class="paragraph">
+<p>　　一个Java程序对应一个JVM，一个方法（线程）对应一个Java栈。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java代码的编译和执行过程">Java代码的编译和执行过程</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Java代码的编译和执行包括了三个重要机制：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Java源码编译机制（.java源代码文件 &#8594; .class字节码文件）</p>
+</li>
+<li>
+<p>类加载机制（ClassLoader）</p>
+</li>
+<li>
+<p>类执行机制（JVM执行引擎）</p>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="java源码编译机制">Java源码编译机制</h3>
+<div class="paragraph">
+<p>　　Java源代码是不能被机器识别的，需要先经过编译器编译成JVM可以执行的.class字节码文件，再由解释器解释运行。即：Java源文件（.java）&#8201;&#8212;&#8201;Java编译器 -&#8594; Java字节码文件 （.class）&#8201;&#8212;&#8201;Java解释器 -&#8594; 执行。流程图如下：</p>
+</div>
+<div class="paragraph">
+<p>　　字节码文件（.class）是平台无关的。</p>
+</div>
+<div class="paragraph">
+<p>　　Java中字符只以一种形式存在：Unicode。字符转换发生在JVM和OS交界处（Reader/Writer）。</p>
+</div>
+<div class="paragraph">
+<p>　　最后生成的class文件由以下部分组成：</p>
+</div>
+<div class="paragraph">
+<p>结构信息。包括class文件格式版本号及各部分的数量与大小的信息<br>
+元数据。对应于Java源码中声明与常量的信息。包含类/继承的超类/实现的接口的声明信息、域与方法声明信息和常量池<br>
+方法信息。对应Java源码中语句和表达式对应的信息。包含字节码、异常处理器表、求值栈与局部变量区大小、求值栈的类型记录、调试符号信息</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="类加载机制classloader">类加载机制（ClassLoader）</h3>
+<div class="paragraph">
+<p>　　Java程序并不一个可执行文件，是由多个独立的类文件组成。这些类文件并非一次性全部装入内存，而是依据程序逐步载入。</p>
+</div>
+<div class="paragraph">
+<p>　　JVM的类加载是通过ClassLoader及其子类来完成的，类的层次关系和加载顺序可以由下图来描述：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Bootstrap ClassLoader</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>JVM的根ClassLoader，由C++实现<br>
+加载Java的核心API：$JAVA_HOME中jre/lib/rt.jar中所有class文件的加载，这个jar中包含了java规范定义的所有接口以及实现。<br>
+JVM启动时即初始化此ClassLoader<br>
+. Extension ClassLoader</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre> 加载Java扩展API（lib/ext中的类）
+. App ClassLoader</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>加载Classpath目录下定义的class<br>
+. Custom ClassLoader</p>
+</div>
+<div class="paragraph">
+<p>属于应用程序根据自身需要自定义的ClassLoader，如tomcat、jboss都会根据J2EE规范自行实现ClassLoader<br>
+　　</p>
+</div>
+<div class="paragraph">
+<p>　　加载过程中会先检查类是否被已加载，检查顺序是自底向上，从Custom ClassLoader到BootStrap ClassLoader逐层检查，只要某个classloader已加载就视为已加载此类，保证此类只所有ClassLoader加载一次。而加载的顺序是自顶向下，也就是由上层来逐层尝试加载此类。</p>
+</div>
+<div class="paragraph">
+<p>双亲委派机制</p>
+</div>
+<div class="paragraph">
+<p>　　JVM在加载类时默认采用的是双亲委派机制。通俗的讲，就是某个特定的类加载器在接到加载类的请求时，首先将加载任务委托给父类加载器，依次递归。如果父类加载器可以完成类加载任务，就成功返回；只有父类加载器无法完成此加载任务时，才自己去加载。</p>
+</div>
+<div class="paragraph">
+<p>　　作用：1）避免重复加载；2）更安全。如果不是双亲委派，那么用户在自己的classpath编写了一个java.lang.Object的类，那就无法保证Object的唯一性。所以使用双亲委派，即使自己编写了，但是永远都不会被加载运行。</p>
+</div>
+<div class="paragraph">
+<p>破坏双亲委派机制</p>
+</div>
+<div class="paragraph">
+<p>　　双亲委派机制并不是一种强制性的约束模型，而是Java设计者推荐给开发者的类加载器实现方式。</p>
+</div>
+<div class="paragraph">
+<p>　　线程上下文类加载器，这个类加载器可以通过java.lang.Thread类的setContextClassLoader()方法进行设置，如果创建线程时还未设置，它将会从父线程中继承一个，如果在应用程序的全局范围内都没有设置过的话，那么这个类加载器就是应用程序类加载器。像JDBC就是采用了这种方式。这种行为就是逆向使用了加载器，违背了双亲委派模型的一般性原则。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="类执行机制">类执行机制</h3>
+<div class="paragraph">
+<p>Java字节码的执行是由JVM执行引擎来完成，流程图如下所示：</p>
+</div>
+<div class="paragraph">
+<p>　　JVM是基于栈的体系结构来执行class字节码的。线程创建后，都会产生程序计数器（PC）和栈（Stack），程序计数器存放下一条要执行的指令在方法内的偏移量，栈中存放一个个栈帧，每个栈帧对应着每个方法的每次调用，而栈帧又是有局部变量区和操作数栈两部分组成，局部变量区用于存放方法中的局部变量和参数，操作数栈中用于存放方法执行过程中产生的中间结果。</p>
+</div>
+<div class="paragraph">
+<p>主要的执行技术：解释，即时编译，自适应优化、芯片级直接执行</p>
+</div>
+<div class="paragraph">
+<p>解释属于第一代JVM，<br>
+即时编译JIT属于第二代JVM，<br>
+自适应优化（目前Sun的HotspotJVM采用这种技术）则吸取第一代JVM和第二代JVM的经验，采用两者结合的方式<br>
+　　开始对所有的代码都采取解释执行的方式，并监视代码执行情况。对那些经常调用的方法启动一个后台线程，将其编译为本地代码，并进行优化。若方法不再频繁使用，则取消编译过的代码，仍对其进行解释执行。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="jvm垃圾回收gc">JVM垃圾回收（GC）</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>GC的基本原理：将内存中不再被引用的对象进行回收，GC中用于回收的方法称为收集器。垃圾：不再被引用的对象。</p>
+</div>
+<div class="paragraph">
+<p>由于GC需要消耗一些资源和时间，Java在对对象的生命周期特征进行分析后，按照新生代、旧生代的方式来对对象进行收集，以尽可能的缩短GC对应用造成的暂停。</p>
+</div>
+<div class="paragraph">
+<p>对新生代的对象的收集称为minor GC；<br>
+对旧生代的对象的收集称为Full GC；<br>
+程序中主动调用System.gc()的GC为Full GC。<br>
+　　Java垃圾回收是单独的后台线程gc执行的，自动运行无需显示调用。即使主动调用了java.lang.System.gc()，该方法也只会提醒系统进行垃圾回收，但系统不一定会回应，可能会不予理睬。</p>
+</div>
+<div class="paragraph">
+<p>判断一块内存空间是否符合回收标准：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>对象赋予了空值，且之后再未调用（obj = null;）</p>
+</li>
+<li>
+<p>对象赋予了新值，即重新分配了内存空间（obj = new Obj();）</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>内存泄漏：程序中保留着对永远不再使用的对象的引用。因此这些对象不回被GC回收，却一直占用内存空间却毫无用处。即：1）对象是可达的；2）对象是无用的。满足这两个条件即可判定为内存泄漏。</p>
+</div>
+<div class="paragraph">
+<p>　　应确保不需要的对象不可达，通常采用将对象字段设置为null的方式，或从容器collection中移除对象。局部变量不再使用时无需显示设置为null，因为对局部变量的引用会随着方法的退出而自动清除。</p>
+</div>
+<div class="paragraph">
+<p>内存泄露的原因：1）全局集合；2）缓存；3）ClassLoader</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="内存调优">内存调优</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>调优目的：减少GC的频率尤其是Full GC的次数，过多的GC会占用很多系统资源影响吞吐量。特别要关注Full GC，因为它会对整个堆进行整理。</p>
+</div>
+<div class="paragraph">
+<p>主要手段：JVM调优主要通过配置JVM的参数来提高垃圾回收的速度，合理分配堆内存各部分的比例。</p>
+</div>
+<div class="paragraph">
+<p>导致Full GC的几种情况和调优策略：</p>
+</div>
+<div class="paragraph">
+<p>旧生代空间不足<br>
+调优时尽量让对象在新生代GC时被回收、让对象在新生代多存活一段时间和不要创建过大的对象及数组避免直接在旧生代创建对象<br>
+持久代（Pemanet Generation）空间不足<br>
+增大Perm Gen空间，避免太多静态对象<br>
+统计得到的GC后晋升到旧生代的平均大小大于旧生代剩余空间<br>
+控制好新生代和旧生代的比例<br>
+System.gc()被显示调用<br>
+垃圾回收不要手动触发，尽量依靠JVM自身的机制</p>
+</div>
+<div class="paragraph">
+<p>堆内存比例不良设置会导致什么后果：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>新生代设置过小</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>一是新生代GC次数非常频繁，增大系统消耗；二是导致大对象直接进入旧生代，占据了旧生代剩余空间，诱发Full GC</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>新生代设置过大</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>一是新生代设置过大会导致旧生代过小（堆总量一定），从而诱发Full GC；二是新生代GC耗时大幅度增加</p>
+</div>
+<div class="paragraph">
+<p>一般说来新生代占整个堆1/3比较合适</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Survivor设置过小</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>导致对象从eden直接到达旧生代，降低了在新生代的存活时间</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Survivor设置过大</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>导致eden过小，增加了GC频率</p>
+</div>
+<div class="paragraph">
+<p>另外，通过-XX:MaxTenuringThreshold=n来控制新生代存活时间，尽量让对象在新生代被回收</p>
+</div>
+<div class="paragraph">
+<p>JVM提供两种较为简单的GC策略的设置方式：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>吞吐量优先</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>JVM以吞吐量为指标，自行选择相应的GC策略及控制新生代与旧生代的大小比例，来达到吞吐量指标。这个值可由-XX:GCTimeRatio=n来设置</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>暂停时间优先</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>JVM以暂停时间为指标，自行选择相应的GC策略及控制新生代与旧生代的大小比例，尽量保证每次GC造成的应用停止时间都在指定的数值范围内完成。这个值可由-XX:MaxGCPauseRatio=n来设置</p>
+</div>
+<div class="paragraph">
+<p>JVM常见配置</p>
+</div>
+<div class="paragraph">
+<p>堆设置<br>
+-Xms:初始堆大小<br>
+-Xmx:最大堆大小<br>
+-XX:NewSize=n:设置年轻代大小<br>
+-XX:NewRatio=n:设置年轻代和年老代的比值。如:为3，表示年轻代与年老代比值为1：3，年轻代占整个年轻代年老代和的1/4<br>
+-XX:SurvivorRatio=n:年轻代中Eden区与两个Survivor区的比值。注意Survivor区有两个。如：3，表示Eden：Survivor=3：2，一个Survivor区占整个年轻代的1/5<br>
+-XX:MaxPermSize=n:设置持久代大小<br>
+收集器设置<br>
+-XX:+UseSerialGC:设置串行收集器<br>
+-XX:+UseParallelGC:设置并行收集器<br>
+-XX:+UseParalledlOldGC:设置并行年老代收集器<br>
+-XX:+UseConcMarkSweepGC:设置并发收集器<br>
+垃圾回收统计信息<br>
+-XX:+PrintGC<br>
+-XX:+PrintGCDetails<br>
+-XX:+PrintGCTimeStamps<br>
+-Xloggc:filename<br>
+并行收集器设置<br>
+-XX:ParallelGCThreads=n:设置并行收集器收集时使用的CPU数。并行收集线程数。<br>
+-XX:MaxGCPauseMillis=n:设置并行收集最大暂停时间<br>
+-XX:GCTimeRatio=n:设置垃圾回收时间占程序运行时间的百分比。公式为1/(1+n)<br>
+并发收集器设置<br>
+-XX:+CMSIncrementalMode:设置为增量模式。适用于单CPU情况。<br>
+-XX:ParallelGCThreads=n:设置并发收集器年轻代收集方式为并行收集时，使用的CPU数。并行收集线程数。</p>
+</div>
+</div>
+</div>
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+
+            <!-- Content -->
+            <div class="side content">
+                <div>
+                    Content
+                </div>
+                <ul id="content-side" class="content-ul">
+                </ul>
+            </div>
+            <!-- 其他div框放到这里 -->
+            <!-- <div class="side">bbbb</div> -->
+        </div>
+    </div>
+</div>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

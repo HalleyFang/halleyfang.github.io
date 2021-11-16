@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>白盒测试方法</title>
+    <meta name="description" content="白盒测试定义：白盒测试又称结构测试,透明盒测试、逻辑驱动测试或基于代码的测试。白盒测试是一种测试用例设计方法，白盒指的是程序的内部结构和运作机制是可见的。">
+    <meta name="keywords" content="参考指南,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/guide/2020/11/11/%E7%99%BD%E7%9B%92%E6%B5%8B%E8%AF%95%E6%96%B9%E6%B3%95.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>白盒测试方法</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2020-11-11
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#%E5%8F%82%E8%80%83%E6%8C%87%E5%8D%97" title="Tag: 参考指南" rel="tag">参考指南</a-->
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div class="paragraph">
+<p>白盒测试定义：白盒测试又称结构测试,透明盒测试、逻辑驱动测试或基于代码的测试。白盒测试是一种测试用例设计方法，白盒指的是程序的内部结构和运作机制是可见的。</p>
+</div>
+<div class="sect1">
+<h2 id="白盒测试的目的">白盒测试的目的</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>通过检查软件内部的逻辑结构，对软件中的逻辑路径进行覆盖测试；在程序不同地方设置检查点，检查程序的状态，以确定实际运行状态与预期状态是否一致。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="白盒测试的方法">白盒测试的方法</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>静态分析<br>
+是一种不执行程序而进行测试的技术。静态分析的主要目的是检查软件的表示和描述是否一致,没有冲突或者没有歧义</p>
+</li>
+<li>
+<p>动态分析<br>
+当软件系统在模拟或真实的环境中执行前、过程中和执行后,对其行为分析。它显示了一个系统在检查状态下是否正确。在动态分析技术中,最重要的技术是路径和分支测试。下面要介绍的六种覆盖测试方法属于动态分析方法。</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>例题：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-flow hljs" data-lang="flow">st=&gt;start: 开始--A
+cond1=&gt;condition: x&gt;=80 &amp;&amp; y&gt;=80 --B
+op1=&gt;operation: 处理框1 --C
+cond2=&gt;condition: x+y&gt;=140 &amp;&amp; (x&gt;=90 or y&gt;=90) --D
+op2=&gt;operation: 处理框2 --E
+op3=&gt;operation: 处理框3 --F
+e=&gt;end: 结束 --G
+st-&gt;cond1
+cond1(yes)-&gt;op1-&gt;e
+cond1(no)-&gt;cond2
+cond2(yes)-&gt;op2-&gt;e
+cond2(no)-&gt;op3-&gt;e</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="语句覆盖">语句覆盖</h3>
+<div class="paragraph">
+<p>使程序中的每个可执行语句都能执行一次的测试用例，其覆盖标准无法发现判定中逻辑运算的错误；</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">序号</th>
+<th class="tableblock halign-left valign-top">x</th>
+<th class="tableblock halign-left valign-top">y</th>
+<th class="tableblock halign-left valign-top">路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABCG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDFG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>优点：可以很直观地从源代码得到测试用例，无须细分每条判定表达式。</p>
+</div>
+<div class="paragraph">
+<p>缺点：由于这种测试方法仅仅针对程序逻辑中显式存在的语句，但对于隐藏的条件和可能到达的隐式逻辑分支，是无法测试的。在本例中去掉了语句1—〉T去掉，那么就少了一条测试路径。在if结构中若源代码没有给出else后面的执行分支，那么语句覆盖测试就不会考虑这种情况。但是我们不能排除这种以外的分支不会被执行，而往往这种错误会经常出现。再如，在Do-While结构中，语句覆盖执行其中某一个条件分支。那么显然，语句覆盖对于多分支的逻辑运算是无法全面反映的，它只在乎运行一次，而不考虑其他情况。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="判定覆盖分支覆盖">判定覆盖（分支覆盖）</h3>
+<div class="paragraph">
+<p>判定覆盖&lt;又叫分支覆盖率&gt;是指对于判断语句，在设计用例的时候，要设计判断语句结果为True和False的两种情况，但若程序中的判定是有几个条件联合构成时，它未必能发现每个条件的错误；</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">序号</th>
+<th class="tableblock halign-left valign-top">x</th>
+<th class="tableblock halign-left valign-top">y</th>
+<th class="tableblock halign-left valign-top">路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABCG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDFG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>优点：判定覆盖比语句覆盖要多几乎一倍的测试路径，当然也就具有比语句覆盖更强的测试能力。同样判定覆盖也具有和语句覆盖一样的简单性，无须细分每个判定就可以得到测试用例。</p>
+</div>
+<div class="paragraph">
+<p>缺点：往往大部分的判定语句是由多个逻辑条件组合而成（如，判定语句中包含AND、OR、CASE），若仅仅判断其整个最终结果，而忽略每个条件的取值情况，必然会遗漏部分测试路径。</p>
+</div>
+<div class="paragraph">
+<p>ps:与语句覆盖的区别，假设if条件没有else分支，则语句覆盖只有一个分支，而分支覆盖依然是需要设计else分支</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="条件覆盖">条件覆盖</h3>
+<div class="paragraph">
+<p>设计用例时针对判断语句里面每个条件表达式true 和 false各取值一次，不考判断语句的计算结果</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">序号</th>
+<th class="tableblock halign-left valign-top">x</th>
+<th class="tableblock halign-left valign-top">y</th>
+<th class="tableblock halign-left valign-top">路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABCG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDFG</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>优点：显然条件覆盖比判定覆盖，增加了对符合判定情况的测试，增加了测试路径。</p>
+</div>
+<div class="paragraph">
+<p>缺点：要达到条件覆盖，需要足够多的测试用例，但条件覆盖并不能保证判定覆盖。条件覆盖只能保证每个条件至少有一次为真，而不考虑所有的判定结果。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="判定条件覆盖分支条件覆盖">判定条件覆盖（分支条件覆盖）</h3>
+<div class="paragraph">
+<p>判定/条件覆盖是使判定中每个条件的所有可能结果至少出现一次，并且每个判定本身的所有可能结果也至少出现一次；</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">序号</th>
+<th class="tableblock halign-left valign-top">x</th>
+<th class="tableblock halign-left valign-top">y</th>
+<th class="tableblock halign-left valign-top">路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABCG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDFG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">80</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>优点：判定/条件覆盖满足判定覆盖准则和条件覆盖准则，弥补了二者的不足。</p>
+</div>
+<div class="paragraph">
+<p>缺点：判定/条件覆盖准则的缺点是未考虑条件的组合情况。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="修正条件判定覆盖">修正条件判定覆盖</h3>
+<div class="paragraph">
+<p>修正条件判定覆盖满足条件与判定覆盖，并且需要确定每个条件能够影响到包含的判定的结果。</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">序号</th>
+<th class="tableblock halign-left valign-top">x</th>
+<th class="tableblock halign-left valign-top">y</th>
+<th class="tableblock halign-left valign-top">路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABCG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDFG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">80</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">30</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">30</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="条件组合覆盖">条件组合覆盖</h3>
+<div class="paragraph">
+<p>条件组合覆盖是使每个判定中条件结果的所有可能组合至少出现一次，因此判定本身的所有可能解说也至少出现一次，同时也是每个条件的所有可能结果至少出现一次；</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">序号</th>
+<th class="tableblock halign-left valign-top">x</th>
+<th class="tableblock halign-left valign-top">y</th>
+<th class="tableblock halign-left valign-top">路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABCG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDFG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="路径覆盖">路径覆盖</h3>
+<div class="paragraph">
+<p>路径覆盖是每条可能执行到的路径至少执行一次；</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">序号</th>
+<th class="tableblock halign-left valign-top">x</th>
+<th class="tableblock halign-left valign-top">y</th>
+<th class="tableblock halign-left valign-top">路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABCG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDFG</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">70</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ABDEG</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>优点：这种覆盖方法可以对程序进行彻底的测试用例覆盖，比前面讲的五种方法覆盖度都要高。</p>
+</div>
+<div class="paragraph">
+<p>缺点：于路径覆盖需要对所有可能的路径进行测试（包括循环、条件组合、分支选择等），那么需要设计大量、复杂的测试用例，使得工作量呈指数级增长。路径覆盖虽然是一种比较强的覆盖，但未必考虑判断语句中条件表达式结果的组合，并不能代替条件覆盖和条件组合覆盖。</p>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">Selenium使用指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/guide/2020/10/11/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97(Jmeter).html">性能测试指南(jmeter)</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html">Junit+mockito+powermock单元测试初探</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/guide/2020/11/11/%E7%99%BD%E7%9B%92%E6%B5%8B%E8%AF%95%E6%96%B9%E6%B3%95.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/guide/2020/11/11/%E7%99%BD%E7%9B%92%E6%B5%8B%E8%AF%95%E6%96%B9%E6%B3%95.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

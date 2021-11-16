@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Junit源码阅读_textui_testrunner</title>
+    <meta name="description" content="junit可以通过命令行进行执行，java -ea junit.textui.TestRunner testclass 这样的形式，本文主要就是阅读 junit.textui.TestRunner 的源码。">
+    <meta name="keywords" content="junit源码阅读,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>Junit源码阅读_textui_testrunner</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2021-07-06
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#junit" title="Tag: junit" rel="tag">junit</a-->
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <!--a href="/tag/#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB" title="Tag: 源码阅读" rel="tag">源码阅读</a-->
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>junit可以通过命令行进行执行，<code>java -ea junit.textui.TestRunner testclass</code> 这样的形式，本文主要就是阅读 <code>junit.textui.TestRunner</code> 的源码。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="源码解读">源码解读</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="加载运行">加载&#8594;运行</h3>
+<div class="paragraph">
+<p>首先找到junit的入口类</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/junit4/textui.png" alt="入口类">
+</div>
+<div class="title">Figure 1. main方法</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public static void main(String[] args) {
+    TestRunner aTestRunner = new TestRunner();
+    try {
+      //start传入测试类
+        TestResult r = aTestRunner.start(args);
+        if (!r.wasSuccessful()) {
+            System.exit(FAILURE_EXIT);
+        }
+        System.exit(SUCCESS_EXIT);
+    } catch (Exception e) {
+        System.err.println(e.getMessage());
+        System.exit(EXCEPTION_EXIT);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>start分析命令行参数并运行测试类的suite</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public TestResult start(String[] args) throws Exception {
+        String testCase = "";
+        String method = "";
+        boolean wait = false;
+
+        for (int i = 0; i &lt; args.length; i++) {
+            if (args[i].equals("-wait")) {
+                wait = true;
+            } else if (args[i].equals("-c")) {
+                testCase = extractClassName(args[++i]);
+            } else if (args[i].equals("-m")) {
+                String arg = args[++i];
+                int lastIndex = arg.lastIndexOf('.');
+                testCase = arg.substring(0, lastIndex);
+                method = arg.substring(lastIndex + 1);
+            } else if (args[i].equals("-v")) {
+                System.err.println("JUnit " + Version.id() + " by Kent Beck and Erich Gamma");
+            } else {
+                testCase = args[i];
+            }
+        }
+
+        if (testCase.equals("")) {
+            throw new Exception("Usage: TestRunner [-wait] testCaseName, where name is the name of the TestCase class");
+        }
+
+        try {
+            if (!method.equals("")) {
+                return runSingleMethod(testCase, method, wait);
+            }
+            //初始化，获取testSuite
+            Test suite = getTest(testCase);
+            //测试运行
+            return doRun(suite, wait);
+        } catch (Exception e) {
+            throw new Exception("Could not create and run test suite: " + e);
+        }
+    }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Test getTest(String suiteClassName) {
+        if (suiteClassName.length() &lt;= 0) {
+            clearStatus();
+            return null;
+        }
+        Class&lt;?&gt; testClass = null;
+        try {
+          //根据类名获取测试类信息
+            testClass = loadSuiteClass(suiteClassName);
+        } catch (ClassNotFoundException e) {
+            String clazz = e.getMessage();
+            if (clazz == null) {
+                clazz = suiteClassName;
+            }
+            runFailed("Class not found \"" + clazz + "\"");
+            return null;
+        } catch (Exception e) {
+            runFailed("Error: " + e.toString());
+            return null;
+        }
+        Method suiteMethod = null;
+        try {
+          //获取所有测试方法信息
+            suiteMethod = testClass.getMethod(SUITE_METHODNAME);
+        } catch (Exception e) {
+            // try to extract a test suite automatically
+            clearStatus();
+            //没有通过getMethod方法拿到suiteMethod的话，就会调用TestSuite构造器
+            return new TestSuite(testClass);
+        }
+        if (!Modifier.isStatic(suiteMethod.getModifiers())) {
+            runFailed("Suite() method must be static");
+            return null;
+        }
+        Test test = null;
+        try {
+            test = (Test) suiteMethod.invoke(null); // static method
+            if (test == null) {
+                return test;
+            }
+        } catch (InvocationTargetException e) {
+            runFailed("Failed to invoke suite():" + e.getTargetException().toString());
+            return null;
+        } catch (IllegalAccessException e) {
+            runFailed("Failed to invoke suite():" + e.toString());
+            return null;
+        }
+
+        clearStatus();
+        return test;
+    }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public TestSuite(final Class&lt;?&gt; theClass) {
+        addTestsFromTestCase(theClass);
+    }
+
+    private void addTestsFromTestCase(final Class&lt;?&gt; theClass) {
+        fName = theClass.getName();
+        try {
+            getTestConstructor(theClass); // Avoid generating multiple error messages
+        } catch (NoSuchMethodException e) {
+            addTest(warning("Class " + theClass.getName() + " has no public constructor TestCase(String name) or TestCase()"));
+            return;
+        }
+
+        if (!Modifier.isPublic(theClass.getModifiers())) {
+            addTest(warning("Class " + theClass.getName() + " is not public"));
+            return;
+        }
+
+        Class&lt;?&gt; superClass = theClass;
+        List&lt;String&gt; names = new ArrayList&lt;String&gt;();
+        //判断superClass是不是Test类的子类
+        while (Test.class.isAssignableFrom(superClass)) {
+          //用迭代的形式从被测试的类开始，到被测试的类继承的TestCase，最后到Object类，这个循环从这几个类中所有符合条件的测试方法加入到名为names的list中
+            for (Method each : MethodSorter.getDeclaredMethods(superClass)) {
+                addTestMethod(each, names, theClass);
+            }
+            superClass = superClass.getSuperclass();
+        }
+        if (fTests.size() == 0) {
+            addTest(warning("No tests found in " + theClass.getName()));
+        }
+    }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private void addTestMethod(Method m, List&lt;String&gt; names, Class&lt;?&gt; theClass) {
+        String name = m.getName();
+        if (names.contains(name)) {
+            return;
+        }
+        //判断是否public，非public判断为true
+        if (!isPublicTestMethod(m)) {
+          //判断非public方法是否startsWith("test")
+            if (isTestMethod(m)) {
+                addTest(warning("Test method isn't public: " + m.getName() + "(" + theClass.getCanonicalName() + ")"));
+            }
+            return;
+        }
+        names.add(name);
+        addTest(createTest(theClass, name));
+    }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>至此测试方法初始化完成，接下来就是 <code>dorun</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public TestResult doRun(Test suite, boolean wait) {
+    TestResult result = createTestResult();
+    //添加结果打印监听
+    result.addListener(fPrinter);
+    //开始执行时间
+    long startTime = System.currentTimeMillis();
+    //执行测试
+    suite.run(result);
+    //执行结束时间
+    long endTime = System.currentTimeMillis();
+    //执行耗时
+    long runTime = endTime - startTime;
+    fPrinter.print(result, runTime);
+
+    pause(wait);
+    return result;
+}</code></pre>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/junit4/run.png" alt="run实现">
+</div>
+<div class="title">Figure 2. test run实现</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void run(TestResult result) {
+  //执行TestResult run
+    result.run(this);
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">protected void run(final TestCase test) {
+  //开始执行
+    startTest(test);
+    Protectable p = new Protectable() {
+        public void protect() throws Throwable {
+            //test执行方法
+            test.runBare();
+        }
+    };
+    //调用执行并获取测试结果
+    runProtected(test, p);
+    //执行结束
+    endTest(test);
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void runBare() throws Throwable {
+        Throwable exception = null;
+        //执行前置
+        setUp();
+        try {
+            //调用执行方法
+            runTest();
+        } catch (Throwable running) {
+            exception = running;
+        } finally {
+            try {
+                //执行后置
+                tearDown();
+            } catch (Throwable tearingDown) {
+                if (exception == null) exception = tearingDown;
+            }
+        }
+        if (exception != null) throw exception;
+    }
+
+    protected void runTest() throws Throwable {
+        assertNotNull("TestCase.fName cannot be null", fName); // Some VMs crash when calling getMethod(null,null);
+        Method runMethod = null;
+        try {
+            // use getMethod to get all public inherited
+            // methods. getDeclaredMethods returns all
+            // methods of this class but excludes the
+            // inherited ones.
+            runMethod = getClass().getMethod(fName, (Class[]) null);
+        } catch (NoSuchMethodException e) {
+            fail("Method \"" + fName + "\" not found");
+        }
+        if (!Modifier.isPublic(runMethod.getModifiers())) {
+            fail("Method \"" + fName + "\" should be public");
+        }
+
+        try {
+            //执行
+            runMethod.invoke(this);
+        } catch (InvocationTargetException e) {
+            e.fillInStackTrace();
+            throw e.getTargetException();
+        } catch (IllegalAccessException e) {
+            e.fillInStackTrace();
+            throw e;
+        }
+    }</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">Junit源码阅读_springrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Selenium_pagefactory源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>halley.fang 个人博客</title>
+    <meta name="description" content="halley.fang 个人博客">
+    <meta name="keywords" content=" ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/tmppost/exercise-1.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1></h1>
+        <hr>
+        <h1>exercise-1</h1>
+<div class="sect1">
+<h2 id="给定一个包括_的字符串判断字符串是否有效">给定一个包括 '('，')'，'{'，'}'，'['，']' 的字符串，判断字符串是否有效</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/**
+ *  给定一个包括 '('，')'，'{'，'}'，'['，']' 的字符串，判断字符串是否有效。
+ *  有效字符串需满足：左括号必须用相同类型的右括号闭合。左括号必须以正确的顺序闭合。注意空字符串可被认为是有效字符串。
+ *	示例 1:输入: "()" 输出: true
+ *	示例 2:输入: "()[]{}" 输出: true
+ *	示例 3:输入: "(]" 输出: false
+ *	示例 4:输入: "([)]" 输出: false
+ *	示例 5:输入: "{[]}" 输出: true
+ */
+public boolean isValid(String s) {
+        Stack&lt;Character&gt; stack = new Stack&lt;&gt;();
+        for (int i = 0; i &lt; s.length(); i++){
+            char ch = s.charAt(i);
+            if(ch == '(' || ch == '[' || ch == '{'){
+                stack.push(ch);
+            }else{
+                if(stack.isEmpty()){
+                    return false;
+                }
+                char topChar = stack.pop();
+                if(ch == ')' &amp;&amp; topChar != '('){
+                    return false;
+                }else if(ch == ']' &amp;&amp; topChar != '['){
+                    return false;
+                }else if(ch == '}' &amp;&amp; topChar != '{'){
+                    return false;
+                }
+            }
+        }
+        return stack.isEmpty();
+    }</code></pre>
+</div>
+</div>
+</div>
+</div>
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+
+            <!-- Content -->
+            <div class="side content">
+                <div>
+                    Content
+                </div>
+                <ul id="content-side" class="content-ul">
+                </ul>
+            </div>
+            <!-- 其他div框放到这里 -->
+            <!-- <div class="side">bbbb</div> -->
+        </div>
+    </div>
+</div>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

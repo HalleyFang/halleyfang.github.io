@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Junit源码阅读_blockjunit4classrunner</title>
+    <meta name="description" content="junit4执行加载器默认为 BlockJUnit4ClassRunner，平时测试时我经常使用的是 SpringRunner、MockitoJUnitRunner、PowerMockRunner 等，具体使用方式为使用类注解@RunWith,本文中以默认加载器进行解读，其他几个常用 runner 后续进行单独解读。">
+    <meta name="keywords" content="junit源码阅读,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>Junit源码阅读_blockjunit4classrunner</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2021-07-15
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#junit" title="Tag: junit" rel="tag">junit</a-->
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <!--a href="/tag/#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB" title="Tag: 源码阅读" rel="tag">源码阅读</a-->
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>junit4执行加载器默认为 <code>BlockJUnit4ClassRunner</code>，平时测试时我经常使用的是 <code>SpringRunner</code>、<code>MockitoJUnitRunner</code>、<code>PowerMockRunner</code> 等，具体使用方式为使用类注解@RunWith,本文中以默认加载器进行解读，其他几个常用 <code>runner</code> 后续进行单独解读。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="BlockJUnit4ClassRunner">Junit4 源码阅读</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>阅读方向：根据对 <code>Junit4</code> 的使用，首先是如何加载并运行测试，然后是一些常用注解</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>idea 调用入口</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/junit4/ideaDebug.png" alt="idea调用">
+</div>
+<div class="title">Figure 1. idea调用</div>
+</div>
+<div class="paragraph">
+<p>可以看出 <code>idea</code> 插件实际调用到了 <code>JUnitCore</code> 类的 <code>run</code> 方法，下文就直接从该方法开始往下阅读</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//创建一个RunNotifier对象以告知Junit执行测试的进展
+private final RunNotifier notifier = new RunNotifier();
+
+public Result run(Runner runner) {
+    //创建result对象
+    Result result = new Result();
+    //创建RunListener
+    RunListener listener = result.createListener();<i class="conum" data-value="1"></i><b>(1)</b>
+    //添加监听
+    notifier.addFirstListener(listener);<i class="conum" data-value="2"></i><b>(2)</b>
+    try {
+        //初始化测试Description
+        notifier.fireTestRunStarted(runner.getDescription());<i class="conum" data-value="3"></i><b>(3)</b>
+        //runner运行
+        runner.run(notifier);<i class="conum" data-value="4"></i><b>(4)</b>
+        //执行所有的监听器处理执行结果
+        notifier.fireTestRunFinished(result);<i class="conum" data-value="5"></i><b>(5)</b>
+    } finally {
+        //移除监听
+        removeListener(listener);<i class="conum" data-value="6"></i><b>(6)</b>
+    }
+    //返回结果
+    return result;
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>详见下文 <code>createListener</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>详见下文 <code>addFirstListener</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>详见下文 <code>Description</code> 和 <code>fireTestRunStarted</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>详见下文 <code>runner.run</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>详见下文 <code>fireTestRunFinished</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>详见下文 <code>removeListener</code></td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>createListener</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public RunListener createListener() {
+    return new Listener();
+}
+
+@RunListener.ThreadSafe
+    private class Listener extends RunListener {
+        //测试程序开始执行
+        @Override
+        public void testRunStarted(Description description) throws Exception {
+            startTime.set(System.currentTimeMillis());
+        }
+
+        //测试程序执行完成
+        @Override
+        public void testRunFinished(Result result) throws Exception {
+            long endTime = System.currentTimeMillis();
+            runTime.addAndGet(endTime - startTime.get());
+        }
+
+        //一个测试方法执行完成
+        @Override
+        public void testFinished(Description description) throws Exception {
+            count.getAndIncrement();
+        }
+
+        //一个测试方法执行失败
+        @Override
+        public void testFailure(Failure failure) throws Exception {
+            failures.add(failure);
+        }
+
+        //一个测试方法执行忽略
+        @Override
+        public void testIgnored(Description description) throws Exception {
+            ignoreCount.getAndIncrement();
+        }
+
+        //若测试方法因调用 Assume 类中的方法失败（这种失败不认为是测试失败），则会发布 testAssumptionFailure 事件
+        @Override
+        public void testAssumptionFailure(Failure failure) {
+            assumptionFailureCount.getAndIncrement();
+        }
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>addFirstListener</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void addFirstListener(RunListener listener) {
+    //没有监听器则抛出异常
+    if (listener == null) {
+        throw new NullPointerException("Cannot add a null listener");
+    }
+    //添加第一个监听器
+    listeners.add(0, wrapIfNotThreadSafe(listener));
+}
+
+RunListener wrapIfNotThreadSafe(RunListener listener) {
+    //返回RunListener.ThreadSafe注解类的监听器对象
+    return listener.getClass().isAnnotationPresent(RunListener.ThreadSafe.class) ?
+            listener : new SynchronizedRunListener(listener, this);
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Description</p>
+<div class="paragraph">
+<p><code>runner.getDescription()</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public Description getDescription() {
+       Class&lt;?&gt; clazz = getTestClass().getJavaClass();
+       Description description;
+       // if subclass overrides `getName()` then we should use it
+       // to maintain backwards compatibility with JUnit 4.12
+       if (clazz == null || !clazz.getName().equals(getName())) {
+           description = Description.createSuiteDescription(getName(), getRunnerAnnotations());
+       } else {
+           description = Description.createSuiteDescription(clazz, getRunnerAnnotations());
+       }
+
+       //遍历所有@Test的方法
+       for (T child : getFilteredChildren()) {
+           //测试类添加child（测试方法）
+           description.addChild(describeChild(child));
+       }
+       return description;
+   }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private Description(Class&lt;?&gt; testClass, String displayName, Serializable uniqueId, Annotation... annotations) {
+        if ((displayName == null) || (displayName.length() == 0)) {
+            throw new IllegalArgumentException(
+                    "The display name must not be empty.");
+        }
+        if ((uniqueId == null)) {
+            throw new IllegalArgumentException(
+                    "The unique id must not be null.");
+        }
+        //测试类
+        this.fTestClass = testClass;
+        //测试类名称
+        this.fDisplayName = displayName;
+        //description唯一标识，默认为测试类名称
+        this.fUniqueId = uniqueId;
+        //测试方法注解
+        this.fAnnotations = annotations;
+    }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private List&lt;T&gt; getFilteredChildren() {
+    if (filteredChildren == null) {
+        childrenLock.lock();
+        try {
+            if (filteredChildren == null) {
+                //获取所有的测试方法
+                filteredChildren = Collections.unmodifiableList(
+                        new ArrayList&lt;T&gt;(getChildren()));
+            }
+        } finally {
+            childrenLock.unlock();
+        }
+    }
+    return filteredChildren;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>getChildren最终会调用computeTestMethods</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">protected List&lt;FrameworkMethod&gt; computeTestMethods() {
+    //返回所有@Test注解的方法
+    return getTestClass().getAnnotatedMethods(Test.class);
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private final ConcurrentMap&lt;FrameworkMethod, Description&gt; methodDescriptions = new ConcurrentHashMap&lt;FrameworkMethod, Description&gt;();
+
+protected Description describeChild(FrameworkMethod method) {
+    //获取方法对应的description
+    Description description = methodDescriptions.get(method);
+
+    if (description == null) {
+        description = Description.createTestDescription(getTestClass().getJavaClass(),
+                testName(method), method.getAnnotations());
+        //添加method对应的description
+        methodDescriptions.putIfAbsent(method, description);
+    }
+
+   //返回方法对应的description
+    return description;
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>fireTestRunStarted</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void fireTestRunStarted(final Description description) {
+    //开启监听器
+    new SafeNotifier() {
+        @Override
+        protected void notifyListener(RunListener each) throws Exception {
+            //将测试类description传入所有监听器
+            each.testRunStarted(description);
+        }
+    }.run();
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>runner.run</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void run(final RunNotifier notifier) {
+        //创建EachTestNotifier对象
+        EachTestNotifier testNotifier = new EachTestNotifier(notifier,
+                getDescription());
+        //测试套件开始执行调用
+        testNotifier.fireTestSuiteStarted();
+        try {
+            //创建Statement对象，用于执行测试用例
+            Statement statement = classBlock(notifier);
+            //调用-&gt;withInterruptIsolation-&gt;childrenInvoker-&gt;runChildren-&gt;runChild-&gt;runLeaf-&gt;methodBlock(method).evaluate()-&gt; testMethod.invokeExplosively(target)
+            statement.evaluate();
+        } catch (AssumptionViolatedException e) {
+            //Assumption失败
+            testNotifier.addFailedAssumption(e);
+        } catch (StoppedByUserException e) {
+            throw e;
+        } catch (Throwable e) {
+            testNotifier.addFailure(e);
+        } finally {
+            //testSuiteFinished测试套件执行完成
+            testNotifier.fireTestSuiteFinished();
+        }
+    }</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void fireTestSuiteStarted(final Description description) {
+    new SafeNotifier() {
+        @Override
+        protected void notifyListener(RunListener each) throws Exception {
+            //监听器在测试套件开始执行时调用
+            each.testSuiteStarted(description);
+        }
+    }.run();
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">protected Statement classBlock(final RunNotifier notifier) {
+    Statement statement = childrenInvoker(notifier);
+    //如果所有测试方法都是ignore为假，则进入
+    if (!areAllChildrenIgnored()) {
+        //@BeforeClass
+        statement = withBeforeClasses(statement);
+        //@AfterClass
+        statement = withAfterClasses(statement);
+        //@ClassRule
+        statement = withClassRules(statement);
+        //在执行语句后清除当前线程的中断状态
+        statement = withInterruptIsolation(statement);
+    }
+    return statement;
+}
+
+protected Statement childrenInvoker(final RunNotifier notifier) {
+    return new Statement() {
+        @Override
+        public void evaluate() {
+            runChildren(notifier);
+        }
+    };
+}
+
+private void runChildren(final RunNotifier notifier) {
+    final RunnerScheduler currentScheduler = scheduler;
+    try {
+        //遍历所有需要执行的用例
+        for (final T each : getFilteredChildren()) {
+            currentScheduler.schedule(new Runnable() {
+                public void run() {
+                    //执行测试
+                    ParentRunner.this.runChild(each, notifier);
+                }
+            });
+        }
+    } finally {
+        currentScheduler.finished();
+    }
+}
+
+private List&lt;T&gt; getFilteredChildren() {
+       if (filteredChildren == null) {
+           childrenLock.lock();
+           try {
+               if (filteredChildren == null) {
+                 //getChildren即前面已经讲过的获取所有@Test方法，这里则是传入所有的child
+                   filteredChildren = Collections.unmodifiableList(
+                           new ArrayList&lt;T&gt;(getChildren()));
+               }
+           } finally {
+               childrenLock.unlock();
+           }
+       }
+       return filteredChildren;
+   }
+
+private volatile RunnerScheduler scheduler = new RunnerScheduler() {
+    //run 传入的childStatement
+    public void schedule(Runnable childStatement) {
+        childStatement.run();
+    }
+
+    public void finished() {
+        // do nothing
+    }
+};</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">protected void runChild(final FrameworkMethod method, RunNotifier notifier) {
+    //获取description
+    Description description = describeChild(method);
+    //如果@Ignore注解
+    if (isIgnored(method)) {
+        //调用监听器testIgnored
+        notifier.fireTestIgnored(description);
+    } else {
+        //不是ignore则创建Statement进行执行
+        Statement statement = new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                methodBlock(method).evaluate();
+            }
+        };
+        //statement执行调用
+        runLeaf(statement, description, notifier);
+    }
+}
+
+protected boolean isIgnored(FrameworkMethod child) {
+    return child.getAnnotation(Ignore.class) != null;
+}
+
+public void fireTestIgnored(final Description description) {
+    new SafeNotifier() {
+        @Override
+        protected void notifyListener(RunListener each) throws Exception {
+            //监听器testIgnored
+            each.testIgnored(description);
+        }
+    }.run();
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">protected Statement methodBlock(final FrameworkMethod method) {
+    Object test;
+    try {
+        //创建测试类实例
+        test = new ReflectiveCallable() {
+            @Override
+            protected Object runReflectiveCall() throws Throwable {
+                return createTest(method);
+            }
+        }.run();
+    } catch (Throwable e) {
+        return new Fail(e);
+    }
+
+    Statement statement = methodInvoker(method, test);
+    //@Test(expected = ?)
+    statement = possiblyExpectingExceptions(method, test, statement);
+    //@Test(timeout=?)
+    statement = withPotentialTimeout(method, test, statement);
+    //@Before
+    statement = withBefores(method, test, statement);
+    //@After
+    statement = withAfters(method, test, statement);
+    //@Rule
+    statement = withRules(method, test, statement);
+    //在执行语句后清除当前线程的中断状态
+    statement = withInterruptIsolation(statement);
+    return statement;
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">protected final void runLeaf(Statement statement, Description description,
+        RunNotifier notifier) {
+    EachTestNotifier eachNotifier = new EachTestNotifier(notifier, description);
+    //调用监听器执行testStarted
+    eachNotifier.fireTestStarted();
+    try {
+        //测试执行
+        statement.evaluate();
+    } catch (AssumptionViolatedException e) {
+        //调用Assumption失败
+        eachNotifier.addFailedAssumption(e);
+    } catch (Throwable e) {
+        //Throwable
+        eachNotifier.addFailure(e);
+    } finally {
+        //testFinished
+        eachNotifier.fireTestFinished();
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>fireTestRunFinished</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void fireTestRunFinished(final Result result) {
+    new SafeNotifier() {
+        @Override
+        protected void notifyListener(RunListener each) throws Exception {
+            //监听器处理结果信息
+            each.testRunFinished(result);
+        }
+    }.run();
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>removeListener</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void removeListener(RunListener listener) {
+    //移除监听
+    notifier.removeListener(listener);
+}</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="测试方法执行顺序">测试方法执行顺序</h3>
+<div class="paragraph">
+<p>在之前的版本中，Junit在设计上并没有指定测试方法的执行顺序，从4.11版本开始，Junit将默认使用一种确定性的顺序，也即 <code>MethodSorters.DEFAULT</code>。如果想改变测试方法的执行顺序可以为测试用例添加 <code>FixMethodOrder</code> 注解，并且指定其方法的排序类型，可选的 <code>MethodSorters</code> 有：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>DEFAULT</code>，根据方法名称的hashCode进行比较，如果hashCode相同则按照 <code>NAME_ASCENDING</code> 进行比较；</p>
+</li>
+<li>
+<p><code>NAME_ASCENDING</code>，根据方法名称进行比较；</p>
+</li>
+<li>
+<p><code>JVM</code>，使用JVM返回的顺序。</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/**
+ * Sort the methods into a specified execution order.
+ * Defines common {@link MethodSorter} implementations.
+ *
+ * @since 4.11
+ */
+public enum MethodSorters {
+    /**
+     * Sorts the test methods by the method name, in lexicographic order,
+     * with {@link Method#toString()} used as a tiebreaker
+     */
+    NAME_ASCENDING(MethodSorter.NAME_ASCENDING),
+
+    /**
+     * Leaves the test methods in the order returned by the JVM.
+     * Note that the order from the JVM may vary from run to run
+     */
+    JVM(null),
+
+    /**
+     * Sorts the test methods in a deterministic, but not predictable, order
+     */
+    DEFAULT(MethodSorter.DEFAULT);
+
+    private final Comparator&lt;Method&gt; comparator;
+
+    private MethodSorters(Comparator&lt;Method&gt; comparator) {
+        this.comparator = comparator;
+    }
+
+    public Comparator&lt;Method&gt; getComparator() {
+        return comparator;
+    }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>如果一定需要按照自定义顺序执行，可以使用 <code>TestNG</code> 测试框架进行 <code>case</code> 顺序定义，后续会在 <code>TestNg</code> 源码阅读博客中进行讲述。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="总结">总结</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="类说明">类说明</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>BlockJUnit4ClassRunner<br>
+继承 <code>ParentRunner</code> ,实现了 <code>ParentRunner</code> 的 <code>runChild</code>（真正执行测试的方法，每个测试方法都会执行 <code>runChild</code> ）。<code>describeChild(FrameworkMethod method)</code> (用来获取测试类的元数据信息，以及方法和类的信息)，一些验证的方法，这些验证方法在ParentRunner构造的时候就会开始验证。<code>methodBlock(FrameworkMethod method)</code> method里面包含当前要测试的方法。这个方法的作用验证方法能否执行，然后把当前测试类的信息（当前类，测试的方法）传给InvokeMethod，以待后续测试方法的执行，接着获取当前类的元数据信息，保存起来。</p>
+</li>
+<li>
+<p>ParentRunner<br>
+<code>Junit4</code> 测试执行器的基类，它提供了一个测试器所需要的大部分功能。</p>
+</li>
+<li>
+<p>Statement<br>
+在运行期时，执行 <code>test case</code> 前可以插入一些用户动作，它就是描述这些动作的一个类。</p>
+</li>
+<li>
+<p>TestRule<br>
+<code>TestRule</code> 可以描述一个或多个测试方法如何运行和报告信息的接口。在 <code>TestRule</code> 中可以额外加入一些 <code>check</code> ，我们可以让一个 <code>test case</code> 失败/成功，也可以加入一些 <code>setup</code> 和 <code>cleanup</code> 要做的事，也可以加入一些 <code>log</code> 之类的报告信息。总之，跑 <code>test case</code> 之前的任何事，都可以在里面做。需要实现 <code>apply()</code> 方法。</p>
+</li>
+<li>
+<p>Description<br>
+存储着当前单个或多个 <code>test case</code> 的描述信息。这些信息跟逻辑不关，比如元数据信息等。实例化 <code>Description</code> 用 <code>Description.createTestDescription()</code> 方法。</p>
+</li>
+<li>
+<p>RunNotifier<br>
+运行时通知器。执行 <code>Runner.run(RunNotifier runNotifier)</code> 方法时，需要传一个 <code>RunNotifier</code> 进去，这个 <code>RunNotifier</code> 是事件的管理器，它能帮助我们监控测试执行的情况。</p>
+</li>
+<li>
+<p>InvokeMethod<br>
+最终执行 <code>test case</code> 里面的测试方法通过这个类来做，这个类会间接调用 <code>Method.invoke()</code> 方法通知编译器执行 <code>@test</code> 方法。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">Junit源码阅读_springrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Selenium_pagefactory源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">Junit源码阅读_springrunner</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

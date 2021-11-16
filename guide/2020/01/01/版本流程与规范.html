@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>版本流程与规范</title>
+    <meta name="description" content="软件版本流程与规范">
+    <meta name="keywords" content="流程与规范,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/guide/2020/01/01/%E7%89%88%E6%9C%AC%E6%B5%81%E7%A8%8B%E4%B8%8E%E8%A7%84%E8%8C%83.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>版本流程与规范</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2020-01-01
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#%E6%B5%81%E7%A8%8B%E4%B8%8E%E8%A7%84%E8%8C%83" title="Tag: 流程与规范" rel="tag">流程与规范</a-->
+        <a href="/tag/#流程与规范" title="Tag: 流程与规范" rel="tag" style="color: blue;">流程与规范</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>软件版本流程与规范</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="项目流程">项目流程</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="项目流程_2">项目流程</h3>
+<div class="imageblock">
+<div class="content">
+<img src="/images/version-rules/流程1.png" alt="项目流程">
+</div>
+<div class="title">Figure 1. 项目流程</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="流程说明">流程说明</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 42.8571%;">
+<col style="width: 28.5715%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">角色</th>
+<th class="tableblock halign-left valign-top">阶段</th>
+<th class="tableblock halign-left valign-top">内容</th>
+<th class="tableblock halign-left valign-top">交付</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-center valign-middle" rowspan="6"><p class="tableblock">产品经理</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">启动阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.产品经理进行需求调研<br>
+2.完成业务流程梳理<br>
+3.界面原型设计</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《需求调研文档》<br>
+《需求规格设计说明书》<br>
+《产品原型》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.产品经理面向整个团队进行需求宣讲。<br>
+2.根据评审意见修改需求规格设计说明书</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《需求规格设计说明书》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">设计阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求变更</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《需求规格设计说明书》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">开发阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求变更</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《需求规格设计说明书》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求变更</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《需求规格设计说明书》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">上线阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">原则上不再接受需求变更，放入下一个版本</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-middle" rowspan="6"><p class="tableblock">项目经理</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">启动阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.确认项目组团队组成，包括产品经理、研发项目经理、研发工程师、测试团队等。<br>
+2.指定项目计划<br>
+3.明确项目管理制度<br>
+4.风险评估</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《立项报告》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.需求分析评审<br>
+2.研发项目经理根据需求及项目要求，明确项目里程碑，完成项目计划，<br>
+3.根据项目计划，进行项目任务分解，完成项目任务分配。</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《项目计划及任务分配》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">设计阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">（有单独的开发经理和测试经理则由对应的负责人完成，没有则由项目经理完成或指派责任人完成）<br>
+1.概要设计<br>
+2.详细设计评审<br>
+3.测试设计评审</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《概要设计说明书》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">开发阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">项目管理<br>
+版本管理<br>
+代码评审</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">项目管理<br>
+版本管理<br>
+缺陷评审</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">上线阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">项目管理</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-middle" rowspan="6"><p class="tableblock">开发工程师</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">启动阶段</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求分析评审</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">设计阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">在概要设计的基础上，开发者需要进行软件系统的详细设计。</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《详细设计说明书》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">开发阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.开发程序代码。<br>
+2.功能联调。<br>
+3.完成编码后需要进行功能评审，评审通过转测试。</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">功能代码<br>
+《用户安装手册》<br>
+《用户使用指南》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">开发工程师根据测试提交的bug修改代码，完成后提交测试，测试通过后完成。</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">上线阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">配合上线</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-middle" rowspan="6"><p class="tableblock">测试工程师</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">启动阶段</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求分析评审</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">设计阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.测试计划<br>
+2.测试分析</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《测试计划》<br>
+《测试分析》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">开发阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.测试用例编写<br>
+2.测试脚本开发</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《测试用例》<br>
+测试脚本</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试工程师按照测试计划和测试用例执行测试，提交bug分配给相应的开发人员调整。</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">《用户安装手册》<br>
+《用户使用指南》<br>
+《测试报告》</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">上线阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">上线验证</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-center valign-middle" rowspan="6"><p class="tableblock">运维</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">启动阶段</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">需求阶段</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">设计阶段</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">开发阶段</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试阶段</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">上线阶段</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.部署软件包<br>
+2.与客户确认达成一致后，系统进行试运行，稳定后正式上线。</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="评审方式">评审方式</h3>
+<div class="paragraph">
+<p>本文只针对内部评审进行描述：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>会议评审<br>
+将涉及人员集合在一起进行会议评审</p>
+</li>
+<li>
+<p>邮件评审<br>
+通过电子邮件附件形式进行评审以及反馈</p>
+</li>
+<li>
+<p>会议与邮件相结合<br>
+先进行邮件评审，再进行会议评审</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="版本命名规范">版本命名规范</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="版本命名规范_2">版本命名规范</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>稳定版版本号由三部分组成：主板本号，子版本号和阶段版本号，格式为 <code>1.1.1</code>，例如：<code>1.0.0</code>、<code>1.0.1</code>、<code>2.1.0</code> 等。其中第一个 <code>1</code> 为主版本号，第二个 <code>1</code> 为子版本号，第三个 <code>1</code> 为阶段版本号</p>
+</li>
+<li>
+<p>预览版版本号由三部分组成：主板本号，子版本号和版本标识，格式为 <code>1.1-SNAPSHOT</code>，其中第一个 <code>1</code> 为主版本号，第二个 <code>1</code> 为子版本号，<code>SNAPSHOT</code> 为版本标识</p>
+</li>
+<li>
+<p>测试版本号由四部分组成：主板本号，子版本号，阶段版本号，日期版本号，格式为 <code>1.1.1.20180725</code>，其中第一个 <code>1</code> 为主版本号，第二个 <code>1</code> 为子版本号，第三个 <code>1</code> 为阶段版本号，第四部分为日期版本号</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="软件包命名规范">软件包命名规范</h3>
+<div class="paragraph">
+<p>软件包命名由三部分组成：软件名称，版本号，后缀，软件名称和版本号中间用"-"分割。例如 <code>Softwire-web-1.1.0.jar</code>，其中软件名称为 <code>Softwire-web</code>， <code>1.1.0</code> 为版本号， <code>.jar</code> 为后缀名。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="版本文件命名规范">版本文件命名规范</h3>
+<div class="paragraph">
+<p>文件名称由四部分组成：第一部分为项目名称，第二部分为文件的描述，第三部分为当前软件的版本号，第四部分为文件后缀，例如：<code>Softwire</code> 测试报告 <code>1.1.adoc</code></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="版本号修改规则">版本号修改规则</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>主版本号<br>
+当功能模块有较大的变动，比如增加多个模块或者整体架构发生变化。此版本号由项目决定是否修改。</p>
+</li>
+<li>
+<p>子版本号<br>
+相对于主版本号而言，子版本号升级对应的是软件功能有一定的增加或变化，比如增加了对权限控制、增加自定义视图等功能。此版本号由项目决定是否修改。</p>
+</li>
+<li>
+<p>阶段版本号<br>
+一般是 <code>Bug</code> 修复或是一些小的变动，要经常发布修订版，时间间隔不限，修复一个严重的 <code>bug</code> 即可发布一个修订版。此版本号由项目经理决定是否修改。</p>
+</li>
+<li>
+<p>日期版本号<br>
+用于记录修改项目的当前日期，每天对项目的修改都需要更改日期版本号。此版本号由开发测试人员决定是否修改</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="git版本管理">Git版本管理</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>团队开发中，遵循一个合理、清晰的 <code>Git</code> 使用流程，是非常重要的。否则，每个人都提交一堆杂乱<br>
+无章的 <code>commit</code> ，项目很快就会变得难以协调和维护。</p>
+</div>
+<div class="sect2">
+<h3 id="分支管理">分支管理</h3>
+<div class="paragraph">
+<p><code>Git</code> 的一大特点就是可以创建很多分支并行开发。正因为它的灵活性，团队中如果没有一个成熟的<br>
+分支模型的话，那将会是一团糟。下面以 <code>Softwire-web</code> 为例给出版本分支模型。</p>
+</div>
+<div class="paragraph">
+<p><code>Softwire-web</code> 分支模型就是给原本普普通通的分支赋予了不同的职责：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">snapshot——最为稳定功能最为完整的随时可发布的代码；
+master——永远是功能最新最全的分支；
+V1.0——发布定期要上线的功能；
+V2.0——发布定期要上线的功能。</code></pre>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/version-rules/mygitflow.png" alt="分支模型">
+</div>
+<div class="title">Figure 2. 分支模型</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="softwire_web开发过程">Softwire-web开发过程</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>进入开发阶段后，开发人员在 <code>master</code> 分支进行功能开发。</p>
+</li>
+<li>
+<p>功能开发完并自测之后，先将 <code>master</code> 最新的代码拉取下来，解决冲突后提交代码</p>
+</li>
+<li>
+<p>代码提交后通知项目经理或开发经理进行代码评审，并通知测试人员对功能进行评审，评审通过后测试打包验证</p>
+</li>
+<li>
+<p>当某个版本所有功能都开发测试完成后，则将版本代码合并到对应版本分支，例如 <code>V1.0.1</code>，在 <code>GitBucket</code> 创建合并请求( <code>pull request</code>)，项目负责人在收到合并请求时，应该先做下代码审核看看有没有明显的严重的错误；有问题就找负责开发的人去修改，没有就接受请求。</p>
+</li>
+<li>
+<p>测试人员在版本分支打包进行测试，若发现了 <code>bug</code>，相应的开发人员就在版本分支上或者基于版本分支创建一个分支进行修复。（到达该步骤后 <code>master</code> 上不允许再提交代码，只能在版本分支修改）</p>
+</li>
+<li>
+<p>当确保某次发布的功能可以发布时，开发人员将版本分支合并进 <code>master</code> 和 <code>snapshot</code> 并打上 <code>tag</code>，然后打包发布到线上环境。建议打 <code>tag</code> 时在信息中详细描述这次发布的内容，如：添加了哪些功能，修复了什么问题。<code>tag</code> 采用语义化版本命名(参考版本号语义化格式)</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>当某个版本需要定制开发时，需要开发者新建一个定制分支，从 <code>snapshot</code> 拉取对应的基础版本代码，后续开发流程与上述一致</p>
+</li>
+<li>
+<p>当主板本升级后，历史版本分支则进入独立状态，基于历史版本进行的开发或修改不能再往 <code>master</code> 合并，若 <code>master</code> 也需要修改则独立修改 <code>master</code> 分支</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="softwire_git库">Softwire git库</h3>
+<div class="paragraph">
+<p>目前 Softwire 源代码 Git 仓库总共有 3 个：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Softwire-super-pom</code></p>
+</li>
+<li>
+<p><code>Softwire-starter</code></p>
+</li>
+<li>
+<p><code>Softwire-web</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>每个 Git 仓库下的分支都是：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>一个开发分支 <code>master</code>。</p>
+</li>
+<li>
+<p>一个预览版分支 <code>snapshot</code>。</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><code>snapshot</code> 分支上不会有任何提交，只会在确定 <code>master</code> 分支上某个 Commit 是可用的情况下，“快进合并”（fast forward）到该 Commit。</p>
+</div>
+<div class="paragraph">
+<p>也就是说强制快进合并一定可以成功：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">git checkout snapshot
+git merge --ff-only master</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>多个稳定版分支，例如 <code>1.0.x</code>、<code>1.1.x</code>、<code>2.1.x</code> 等。</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="变更管理">变更管理</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>所有变更都变更在 GitBucket 中添加 Issue。原则上来讲，不允许不关联任何 Issue 的 Commit，除非只是添加一些注释或调整一下格式等小改动。</p>
+</li>
+<li>
+<p>变更分为新特性和 Bug 两大类。所有新特性变更必须由变更设计小组讨论后确定设计方案，并写入 Issue。如果是比较大的变更，还应撰写单独的设计文档。</p>
+<div class="paragraph">
+<p>变更处理人应尽可能参与变更讨论、设计的过程，以便有更深刻的理解。</p>
+</div>
+</li>
+<li>
+<p>变更管理委员会要确定该变更需要在哪些分支中提供。具体操作方法是为该 Issue 添加多个以分支名命名的 Label。注意：变更类型（<code>task</code>、<code>enhancement</code>、<code>bug</code>）也是 Label。</p>
+</li>
+<li>
+<p>开发人员解决变更后，关闭该变更。该变更状态从 <code>Open</code> 变为 <code>Closed</code>。</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>开发人员解决变更过程中必须要做的事情：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>写代码</p>
+<div class="paragraph">
+<p>如果是稳定版分支上存在的 Bug，则尽量在稳定版分支上开发。</p>
+</div>
+</li>
+<li>
+<p>把代码合并到其他存在该 Bug 的分支（包括其他稳定版分支和 <code>master</code> 分支）上，除非是已经宣布不再维护升级的分支。</p>
+</li>
+<li>
+<p>写发布说明</p>
+</li>
+<li>
+<p>给出一个示例</p>
+</li>
+<li>
+<p>撰写示例说明文档</p>
+</li>
+<li>
+<p>撰写参考指南文档</p>
+</li>
+<li>
+<p>有些变更还需纳入常见问题，撰写常见问题文档</p>
+</li>
+<li>
+<p>如果有必要的话，撰写教程文档</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>建一个名为 <code>tested</code> 的 Milestone。</p>
+<div class="paragraph">
+<p>测试人员在测试变更通过后，把该 Issue 的 Milestone 设置为 <code>tested</code>，Issue 的状态仍然保持 <code>Closed</code> 不变。若测试不通过，则把该 Issue 的状态改回 <code>Open</code>。</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="稳定版分支与master的合并">稳定版分支与master的合并</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>一般都是某个 Bug 先在稳定版分支开发，然后再合并到其他稳定版分支以及 <code>master</code> 分支。</p>
+</li>
+<li>
+<p>但如果 <code>master</code> 上的代码已经做了比较大的结构改动，则可能无法依靠 Git 的 Merge 功能就把一切都搞好。</p>
+<div class="paragraph">
+<p>这时可能就要直接在 <code>master</code> 上重新开发。但这种做法一旦出现，则日后再有其他代码变更，也很难再合并了。这是一个比较大的风险，在处理时需谨慎。</p>
+</div>
+</li>
+<li>
+<p>在各个分支之间做合并时，只允许使用 <code>merge</code>，不允许使用 <code>rebase</code>。</p>
+<div class="paragraph">
+<p>但各人自己开发的代码，要合并到 <code>master</code> 等分支时，鼓励使用 <code>rebase</code>。</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="前瞻性文件维护">"前瞻性"文件维护</h3>
+<div class="sect3">
+<h4 id="开发分支_master">开发分支 master</h4>
+<div class="paragraph">
+<p>在稳定版分支建立之前，就要在 <code>master</code> 中“前瞻性”地维护“未来将要建立的分支”的说明文件。</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>起始版本：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>最开始只有 <code>master</code> 分支，在 <code>release-notes.adoc</code> 文件中先写上起始版本号，本质上就是记录当时的 Commit 号。从这个 Commit 号开始，之后所有的变化都要写发布说明。</p>
+</li>
+<li>
+<p>然后增加下个稳定版分支建立之前的预览版本标题 <code>0.9-SNAPSHOT</code> 标题，并提交。以后每次发生变化都需要增加该标题下的描述。</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>等到要从 <code>master</code> 分出稳定分支 <code>0.9.x</code> 时：</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>master</code> 分支的 <code>release-notes.adoc</code> 文件中，标题 <code>0.9-SNAPSHOT</code> 改为 <code>0.9.0</code>，并提交（假设 Commit 号为 <code>abc001</code>）。</p>
+</li>
+<li>
+<p>从 Commit <code>abc001</code> 建立分支 <code>0.9.x</code>，并在该 Commit 上打上 tag <code>0.9.0</code>。发布时就发布 <code>0.9.0</code> 这个 tag。</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>master</code> 分支发生变化后：</p>
+<div class="paragraph">
+<p>要在 <code>release-notes</code> 文件中增加新的 <code>1.0-SNAPSHSOT</code> 标题，并在该标题下写发布说明。</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="稳定版分支">稳定版分支</h4>
+<div class="paragraph">
+<p>稳定版分支也要持续维护 <code>release-notes.adoc</code> 文件。</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>0.9.x</code> 分支发生变化后：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>要在 <code>release-notes</code> 文件中增加新的标题（一开始就是 <code>0.9.1</code>），并在该标题下写发布说明。</p>
+</li>
+<li>
+<p>通常还需要把 <code>0.9.x</code> 上的 Commit 合并到其他分支，合并时应把 <code>0.9.1</code> 标题放在其他分支 <code>release-notes</code> 文件的第一个标题之后，比如放在 <code>master</code> 分支 <code>release-notes</code> 文件的`1.0-SNAPSHSOT` 标题之后。</p>
+</li>
+<li>
+<p>假设当期存在多个在维护的稳定分支（<code>0.9.x</code>、<code>1.0.x</code>、<code>1.1.x</code>、<code>2.0.x</code>），则一般操作顺序是：先从 <code>0.9.x</code> 合并到 <code>1.0.x</code>，再从 <code>1.0.x</code> 合并到 <code>1.1.x</code>，再从 <code>1.1.x</code> 合并到 <code>2.0.x</code>。</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>等到要发布 <code>0.9.1</code> 版本时：</p>
+<div class="paragraph">
+<p>在 <code>0.9.x</code> 分支的最新 Commit 上打上 tag <code>0.9.1</code>。发布时就发布 <code>0.9.1</code> 这个 tag。</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="现有_git_库结构调整已经完成">现有 Git 库结构调整（已经完成）</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>合并 <code>Softwire-core</code> 和 <code>Softwire-web</code>：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>把 <code>Softwire-core</code> 的源代码直接复制到 <code>Softwire-web</code> 中</p>
+</li>
+<li>
+<p>不再使用 <code>Softwire-core</code>，仅用于查看在此之前的 commit</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>调整 <code>Softwire-starter</code> 和 <code>Softwire-web</code> 之间的依赖关系：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>把 <code>Softwire-web</code> 的 <code>pom.xml</code> 中的 <code>&lt;dependencies&gt;</code> 全部删除，转而写进 <code>Softwire-super-pom</code> 的 <code>pom.xml</code></p>
+</li>
+<li>
+<p><code>Softwire-starter</code> 的 <code>pom.xml</code> 去除对 <code>Softwire-web</code> 的依赖</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="提交commit">提交(Commit)</h3>
+<div class="sect3">
+<h4 id="commit规范">Commit规范</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Commit Message 格式</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">&lt;IssueID&gt; &lt;type&gt;:&lt;subject&gt;
+&lt;空行&gt;
+&lt;body&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>上面是一次Commit后Message格式规范，分成标题，内容详情，结尾三个部分，各有各的用处，没有多余项。不管是哪一个部分，任何一行都不得超过72个字符（或100个字符）。这是为了避免自动换行影响美观。</p>
+</div>
+<div class="paragraph">
+<p>头部即首行，是可以直接在页面中预览的部分，入上面图中所示，一共有三个部分&lt;IssueID&gt;，&lt;type&gt;，&lt;subject&gt;。</p>
+</div>
+</li>
+<li>
+<p>Type</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">*    feat :新功能
+*    fix :修复bug
+*    doc :文档改变
+*    style :代码格式改变
+*    refactor :某个已有功能重构
+*    revert :撤销上一次的 commit</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Subject<br>
+用来简要描述本次改动，概述就好了，因为后面还会在Body里给出具体信息。并且最好遵循下面三条:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">* 以动词开头，使用第一人称现在时，比如change，而不是changed或changes
+* 首字母不要大写
+* 结尾不用句号(.)</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Body<br>
+&lt;body&gt;里的内容是对上面subject里内容的展开，在此做更加详尽的描述，内容里应该包含修改动机和修改前后的对比。</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>有两个注意点:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>使用第一人称现在时，比如使用change而不是changed或changes。</p>
+</li>
+<li>
+<p>应该说明代码变动的动机，以及与以前行为的对比。</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Revert<br>
+此外如果需要撤销之前的Commit，那么本次Commit Message中必须以revert：开头，后面紧跟前面描述的Header部分，格式不变。并且，Body部分的格式也是固定的，必须要记录撤销前Commit的SHA值。</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="设置模板">设置模板</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>在根目录建立模板文件<br>
+如 xxx_template文件，其内容如下：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">issueid type:subject
+
+body</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>设置模板，命令如下<br>
+git config commit.template   [模板文件名]    //这个命令只能设置当前分支的提交模板<br>
+git config --global commit.template   [模板文件名]    //这个命令能设置全局的提交模板<br>
+例如：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">git config commit.template xxx_template
+git config --global commit.template xxx_template</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>设置文本编辑器，命令如下：<br>
+git config --global core.editor  [编辑器名字]<br>
+例如：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">git config --global core.editor vi</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>编辑模板提交代码，命令如下</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">git commit</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>注意：<br>
+. git commit之前先要使用  git add  将没有入库的代码入库<br>
+. 可以使用 git  commit  -a 提交多个代码文件</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>在第四步之后，会以设置的编辑器打开模板文件，然后按照格式修改该文件，并保存</p>
+</li>
+<li>
+<p>提交代码到远程分支</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">git push</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="bug管理">BUG管理</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="gitbucket_issue使用">GitBucket issue使用</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>所有变更都变更在 GitBucket 中添加 Issue。原则上来讲，不允许不关联任何 Issue 的 commit，除非只是添加一些注释或调整一下格式等小改动。</p>
+</li>
+<li>
+<p>变更分为新特性和 Bug 两大类。所有新特性变更必须由变更设计小组讨论后确定设计方案，并写入 Issue。如果是比较大的变更，还应撰写单独的设计文档。</p>
+</li>
+<li>
+<p>变更管理委员会要确定该变更需要在哪些分支中提供。具体操作方法是为该 Issue 添加多个以分支名命名的 Label。注意：变更类型（task、enhancement、bug）也是 Label。</p>
+</li>
+<li>
+<p>建一个名为 tested 的 Milestone。测试人员在测试变更通过后，把该 Issue 的 Milestone 设置为 tested。</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="bug处理流程">bug处理流程</h3>
+<div class="imageblock">
+<div class="content">
+<img src="/images/version-rules/bug.png" alt="bug流程">
+</div>
+<div class="title">Figure 3. bug流程</div>
+</div>
+<div class="paragraph">
+<p>流程说明：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>测试人员发现bug并与开发人员确认是否bug(意见分歧则上升到项目经理或产品经理确认)，</p>
+</li>
+<li>
+<p>确认是bug则创建问题单，新增一条Labels 为bug的issue，Assignee 给相应的开发责任人，问题单需要符合规范(下文有规范说明)</p>
+</li>
+<li>
+<p>开发人员修改bug，修改完后自测OK，代码评审OK后将issue关闭，提交给测试人员进行回归测试</p>
+</li>
+<li>
+<p>测试人员对close状态的issue进行回归测试，测试ok则对应issue新增milestones为tested</p>
+</li>
+<li>
+<p>回归测试失败则重新开启issue，通知开发人员重新修改</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>以下场景需要进行问题单回溯<br>
+1.存在重新开启动作的问题单<br>
+2.漏测问题单(评定标准:版本上线后发现的设计遗漏或者测试遗漏导致的问题)</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="bug规范">bug规范</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>标题(title)</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>标题由"头信息+简述"组成；</p>
+</li>
+<li>
+<p>头信息包括版本号、测试阶段、模块功能；</p>
+</li>
+<li>
+<p>简述是对缺陷或者错误特征的简要描述，要求简练、准确、直切主题</p>
+</li>
+<li>
+<p>标题示例：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">【V1.0.1】【SIT】【系统配置】系统配置XX功能XX操作出现XX错误</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>对历史版本的问题测试阶段可以写【OLD】标识</p>
+</li>
+<li>
+<p>重新开启的issue新增【打回】标识</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>描述(comment)</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>说明区域包括：步骤、预计结果、实际结果、测试环境、bug出现时间、截图、日志</p>
+</li>
+<li>
+<p>不同的操作步骤产生不同的问题，需分别报bug,尽量做到一个bug汇报一个问题；</p>
+</li>
+<li>
+<p>描述示例：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">【测试用例】用例编号、用例名称
+【操作步骤】1.XXX
+           2.XXX
+【预期结果】xxx
+【实际结果】xxx
+【详细描述】测试环境、bug出现时间、截图、日志</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>分类(Labels)<br>
+分类选择bug</p>
+</li>
+<li>
+<p>级别(Priority)<br>
+级别简要说明</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">* highest 致命：bug导致服务功能不可用等
+* high    严重：功能实现与需求不符、bug导致测试阻塞等
+* medium  一般：功能缺陷
+* low     提示：提示信息、页面布局等
+* lowest  建议：用户体验性等改善建议</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>责任人(assignee)<br>
+将问题单指派给开发责任人</p>
+</li>
+<li>
+<p>问题处理<br>
+开发人员解决BUG时需要写明以加内容：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>bug原因</p>
+</li>
+<li>
+<p>bug修改方法</p>
+</li>
+<li>
+<p>bug可以在哪个版本进行验证</p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="发布说明">发布说明</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="softwire_版本与_jar_文件的关系">Softwire 版本与 jar 文件的关系</h3>
+<div class="paragraph">
+<p>Softwire 平台发布内容的本质就是几个 jar 文件和一份发布说明文档，目前包括：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Softwire-starter.jar</code></p>
+</li>
+<li>
+<p><code>Softwire-web.jar</code></p>
+</li>
+<li>
+<p><code>release-notes.html</code></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="release_notes">Release Notes</h3>
+<div class="paragraph">
+<p>在 <code>Softwire-web</code> 库中每个分支都持续维护一个发布说明文件（Release Notes），文件名为 <code>release-notes.adoc</code>。<br>
+该文件中应按照版本号倒序列出每个版本（<code>1.0.2</code>、<code>1.0.1</code>、<code>1.0.0</code>）的描述，每个版本号使用二级标题（<code><mark></code>）。<br>
+每个版本的描述可包含以下几个小节，每个小节使用三级标题（<code></mark>#</code>）：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>升级指导，包括：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>升级后要手工做的一些数据库、Redis 处理</p>
+</li>
+<li>
+<p>兼容性发生变化的部分，比如 <code>application.properties</code> 中某个选项的默认值发生了变化，可能导致现有项目升级后出现问题</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>新特性（New Feature）</p>
+</li>
+<li>
+<p>修复（Bug Fix）</p>
+</li>
+<li>
+<p>非功能性变更，包括：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>依赖包版本升级</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>遗留问题以及变通方案</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/guide/2020/01/08/SDLC.html">Sdlc</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/guide/2020/01/01/%E7%89%88%E6%9C%AC%E6%B5%81%E7%A8%8B%E4%B8%8E%E8%A7%84%E8%8C%83.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/guide/2020/01/01/%E7%89%88%E6%9C%AC%E6%B5%81%E7%A8%8B%E4%B8%8E%E8%A7%84%E8%8C%83.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

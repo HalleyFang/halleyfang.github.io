@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>性能测试指南(jmeter)</title>
+    <meta name="description" content="本文将从测试需求分析、测试准备、脚本开发与测试执行、测试结果分析与调优、性能测试报告五个阶段对性能测试过程进行阐述。">
+    <meta name="keywords" content="参考指南,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/guide/2020/10/11/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97(Jmeter).html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>性能测试指南(jmeter)</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2020-10-11
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#%E5%8F%82%E8%80%83%E6%8C%87%E5%8D%97" title="Tag: 参考指南" rel="tag">参考指南</a-->
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div class="paragraph">
+<p>本文将从测试需求分析、测试准备、脚本开发与测试执行、测试结果分析与调优、性能测试报告五个阶段对性能测试过程进行阐述。</p>
+</div>
+<div class="sect1">
+<h2 id="测试需求分析">测试需求分析</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>性能需求分析是整个性能测试工作开展的基础，如果连性能的需求都没弄清楚，后面的性能测试执行其实是没有任何意义的，而且性能需求分析做的好不好直接影响到性能测试的结果。在需求分析阶段，测试人员需要与项目相关的人员进行沟通，收集各种项目资料，对系统进行分析，建立性能测试业务和数据模型，并将其转化为可衡量的具体性能指标，确认测试的目标。</p>
+</div>
+<div class="sect2">
+<h3 id="测试背景和目的">测试背景和目的</h3>
+<div class="paragraph">
+<p>首先，要确定本次性能测试的需求是什么，或者性能测试的目的是什么？ 本文把性能测试按目的分以下几种：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>新系统能力验证</p>
+<div class="paragraph">
+<p>比如，你们刚好开发了一个新系统，在上线前需要验证系统性能。这种情况比较简单，你可以有更多的自由选择测试环境、压力点和测试工具，测试策略上也比较灵活。并且如果性能测试结果没有明显的短板，也不需要进行调优。</p>
+</div>
+</li>
+<li>
+<p>客户有明确要求</p>
+<div class="paragraph">
+<p>这是一个好的结果，这说明客户对性能测试有一定的了解，知道他们需要的系统要达到一个什么样的标准。如：系统要求同时满足100用户登陆，平均每个用户登陆时间不能超过5秒。这个需求很明确，当然也不排除一些不懂装懂的用户，提一些不现实的要求。</p>
+</div>
+<div class="paragraph">
+<p>不管怎么说，用户提要求了，这个比较容易，你可以对现系统做一次性能测试，至于，是通过优化系统还是增加硬件设备才能达到要求。就不是测试考虑的问题了。</p>
+</div>
+</li>
+<li>
+<p>找出系统性能瓶颈</p>
+<div class="paragraph">
+<p>这个需求的目的就很明确了，目的就是找出系统的性能瓶颈，进行调优或硬件扩容，所以性能测试的重点在系统的架构分析和业务分析上面。</p>
+</div>
+</li>
+<li>
+<p>稳定性验证（强度测试）</p>
+<div class="paragraph">
+<p>稳定性是系统的一个重要指标，因为系统一旦上线，就有可能会长期处在用户的访问状态，可能以前没发现的一些问题就会暴漏出来。比较典型的就是内存溢出，这种需求在测试策略上就要考虑性能测试的运行时长。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试类型">测试类型</h3>
+<div class="paragraph">
+<p>根据不同的测试目的可以选择不同的测试类型，性能测试的几种测试类型如下</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>基准测试：在给系统施加较低压力时，查看系统的运行状况并记录相关数做为基础参考。</p>
+</li>
+<li>
+<p>负载测试：是指对系统不断地增加压力或增加一定压力下的持续时间，直到系统的某项或多项性能指标达到安全临界值，例如某种资源已经达到饱和状态等。</p>
+</li>
+<li>
+<p>压力测试：压力测试是评估系统处于或超过预期负载时系统的运行情况，关注点在于系统在峰值负载或超出最大载荷情况下的处理能力。</p>
+</li>
+<li>
+<p>稳定性测试：在给系统加载一定业务压力的情况下，使系统运行一段时间，以此检测系统是否稳定。</p>
+</li>
+<li>
+<p>并发测试：测试多个用户同时访问同一个应用、同一个模块或者数据记录时是否存在死锁或者其他性能问题。</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试范围">测试范围</h3>
+<div class="paragraph">
+<p>性能测试点的选取</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>发生频率非常高的（例如：某邮箱核心业务系统中的登录、收发邮件等业务，它们在每天的业务总量中占到90%以上）</p>
+</li>
+<li>
+<p>关键程度非常高的（产品经理认为绝对不能出现问题的，如登录等）</p>
+</li>
+<li>
+<p>资源占用非常严重的（导致磁盘 I/O 非常大的，例如某个业务进行结果提交时需要向数十个表存取数据，或者一个查询提交请求时会检索出大量的数据记录）</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试模型">测试模型</h3>
+<div class="paragraph">
+<p>测试模型构建工作由性能测试实施人员完成，在需求分析的基础上，对调研收集到的相关资料与信息进行分析梳理，本阶段的产出物为，各个测试场景，以及场景中典型业务操作及所占比率。</p>
+</div>
+<div class="paragraph">
+<p>例如：登录系统新增图书包含登录和新增图书两个操作，登录一次可以进行n次新增操作，则新增操作占比要更多，再结合实际业务的使用评估比例，该测试模型则为登录系统新增图书：登录10%，新增图书90%</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试指标">测试指标</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>对指标的描述包括以下属性：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>准确</p>
+<div class="paragraph">
+<p>如某系统必须在不超过 10 秒的响应时间内，处理 20 起登录任务。再如发邮件时间最大不超过 5 秒以及平均时间在 2 秒以内。</p>
+</div>
+</li>
+<li>
+<p>一致</p>
+<div class="paragraph">
+<p>用户和性能测试工程师对有关术语的理解要一致，如:并发用户数、在线用户数、注册用户数:</p>
+</div>
+</li>
+<li>
+<p>特定</p>
+<div class="paragraph">
+<p>性能测试的需求一定是有条件的。如：检查系统后台关键业务数据 10G、操作数据量为 <code>20K</code> ，1500 个用户、500 个并发用户运行的负载下，连续运行12小时过程中，业务操作是否满足性能需求。</p>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>一般性能需求描述示例：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">* Web首页打开速度 5s 以下，Web登陆速度 15s 以下。
+* 邮件服务支持 50 万个在线用户
+* 计费话单成功率达到 99.999% 以上。
+* 在100个并发用户的高峰期，邮箱的基本功能，处理能力至少达到 10QPS(TPS).
+  QPS(TPS)--每秒钟请求/事物 数量
+* 系统能在高于实际系统运行压力 1 倍的情况下，稳定的运行 12 小时。
+* 这个系统能否支撑200万的VU（每天登录系统的人次）
+  VU--Virtual user(虚拟用户)</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试策略">测试策略</h3>
+<div class="paragraph">
+<p>测试策略一般根据测试目的、测试范围和测试模型来制定，选择对应的测类和测试方案。</p>
+</div>
+<div class="paragraph">
+<p>对于一个特定的业务系统，用户一般会分散在一天的各个时间段进行访问。在不同的时间段中，用户使用业务系统的频率不同，而系统的繁忙程度不同。在一些特定的条件下，可能出现短时间内用户集中访问某个业务系统的情况。例如对于公文处理子系统而言，可能就存在短时间内大量用户查看并办理某条公文的情况。 在进行性能测试时，应当使用“考虑最坏情况的原则”。也就是应当在用户使用业务系统最频繁、对系统造成最大压力的情况下对系统的功能进行测试，判断各功能和页面是否能够满足性能的要求，系统的响应时间是否过长。</p>
+</div>
+<div class="paragraph">
+<p>另一方面，系统性能的验证必须做到“覆盖全面”。虽然系统中各个功能的使用频率并不相同，一些功能的使用频率相对于其他功能来说比较低，但是在进行性能测试和优化时，不能忽略这些功能，编制测试用例时也不能仅仅选择最常用功能。例如可能所有的用户都会访问我的通知列表，但是一般只有5%的用户会使用通过系统设置模块查找某个用户的信息；但是在测试时，我们并不能因为查看用户信息功能的使用频率相对较少，而忽略掉这项功能的测试。所以，这里进行系统性能测试时，对于不同业务，用户的访问比例应该做一个合理分配。</p>
+</div>
+<div class="paragraph">
+<p>在测试策略上，我们还应该考虑，同一个系统在不同硬件环境下的性能表现。从而让系统满足需求的情况下，硬件配置也能达到一个最佳的状态。过份的增加硬件来满足需求也是一种浪费。再说增加硬件设备不是能解决所有性能问题的。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试计划">测试计划</h3>
+<div class="paragraph">
+<p>根据项目的进度要求以及规模，来进行人力与时间的安排。对于大型的性能测试，项目前期的需求调研，环境的部署，工具的选购或开发，人员对测试工具的学习与使用，性能测试的后进行，后期数据的分析与调优，都需要合理安排人员。更有甚者需要专业的，系统工程师、数据库工程师、软件开发工程师、网络工程师以及性能测试工程师的共同参与配合完成。不是一个性能测试人员就可以全部搞定的。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="测试准备">测试准备</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="测试环境">测试环境</h3>
+<div class="paragraph">
+<p>这里的测试环境主要指的软件硬件环境和网络环境。</p>
+</div>
+<div class="paragraph">
+<p>性能测试最好在一个独立的环境内进行，这样不会受到外界的干扰，能够保证测试的数据是独立有效的。如果现你对某个已经上线的网站进行压力测试，那么你得到的数据不是独立的，因为你在做压力测试的时候，其它散户也在访问系统。</p>
+</div>
+<div class="paragraph">
+<p>软件环境：<br>
+这里的软件环境主要指项目运行的环境，比如采用什么样的操作系统、中间件、和数据库。</p>
+</div>
+<div class="paragraph">
+<p>硬件环境：<br>
+这里的硬件环境除了主要包括主机内部部件，CPU 、内存、磁盘以及主板、网卡等，传输介质和路由器也应该考虑在内，</p>
+</div>
+<div class="paragraph">
+<p>网络环境：<br>
+网络环境除了考虑测试机与被系统服务器在一个局域网中进行，还应该保证这个网络的独立性。如果在在性能测试的过程中，其它机子也在消耗着路由器资源。那么路由器也会影响到数据库的传输速度。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试数据">测试数据</h3>
+<div class="paragraph">
+<p>在很多时候，我们是要准备测试数据的，例如系统不允许相同用户的重复登录，那么必须要生成合法的用户数据。有时要对系统进行查询测试，只有在系统有一定数据量进才能验证出系统的真实性能。一个数据库中有两条数据和有两千万条数据，同相一条查询操作，对系统造成的压力是完全不一样的。</p>
+</div>
+<div class="paragraph">
+<p>系统所需数据的分析可以参考以下方式：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>历史数据分析有助于数据量级的确定。从历史数据入手，找出高峰期数据量。</p>
+</li>
+<li>
+<p>从其他相似或者相同系统入手，进行数据分析，找出高峰期数据量。</p>
+</li>
+<li>
+<p>无历史或者相关系统可以参考的时候，就要对系统的性能数据进行估算，包含系统容量，并发数等数据，估算以后给相关人员进行评审或者修订以后，按照大家同意的性能指标进行测试。</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>测试数据最好和真实数据相同，如果能够获得真实系统运行3个月的数据，我们就可以在此基础上进行性能测试。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="测试工具">测试工具</h3>
+<div class="paragraph">
+<p>本文只介绍 Jmeter</p>
+</div>
+<div class="sect3">
+<h4 id="安装_jdk">安装 JDK</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>从 Java 官方网站（官方下载地址: <a href="https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html" class="bare">https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html</a> ）下载 JDK ，需要 JDK 8 或者更高版本</p>
+</li>
+<li>
+<p>安装过程以及环境变量配置请参考官方说明</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="安装_jmeter">安装 Jmeter</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>从 Apache 官网（官方下载地址： <a href="http://jmeter.apache.org/" class="bare">http://jmeter.apache.org/</a> ）下载 Jmeter ，例如： <code>apache-jmeter-4.0.zip</code></p>
+</li>
+<li>
+<p>解压下载的 zip 包</p>
+</li>
+<li>
+<p>进入 <code>bin</code> 目录，运行 <code>jmeter.bat</code> 启动，启动成功界面如图所示</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/jmeter001.png" alt="启动成功">
+</div>
+<div class="title">Figure 1. 启动成功</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="安装_badboy可选">安装 badboy(可选)</h4>
+<div class="paragraph">
+<p>下载 <code>Badboy</code> （官方下载地址： <a href="http://www.badboy.com.au" class="bare">http://www.badboy.com.au</a> ） 进行安装</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="jpgc">Jmeter 安装 jpgc 插件(可选)</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>登录 <a href="https://jmeter-plugins.org/wiki/PerfMonAgent/" class="bare">https://jmeter-plugins.org/wiki/PerfMonAgent/</a> 下载 <code>ServerAgent-2.2.1.zip</code> ，解压可以直接运行</p>
+</li>
+<li>
+<p>到 <a href="https://jmeter-plugins.org/downloads/old/" class="bare">https://jmeter-plugins.org/downloads/old/</a> 下载 <code>JMeterPlugins-Standard-1.4.0.zip</code> 和 <code>JMeterPlugins-Extras-1.4.0.zip</code></p>
+</li>
+<li>
+<p>然后解压两个 zip 包，把 jar 文件拷贝到 <code>/lib/ext</code> 文件夹下, 重新启动</p>
+</li>
+<li>
+<p>将监控服务器的 <code>serverAgent</code> 拷贝到需监测的服务器</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="nmon">安装 nmon(可选)</h4>
+<div class="paragraph">
+<p>使用 nmon 进行服务器监控，根据系统下载对应的软件包，需要在服务器上部署一下。在运行场景之前启动监听，在执行完成后停止监听并获取结果文件，使用分析工具生成监控报告<br>
+参考网站： <a href="https://www.cnblogs.com/wnfindbug/p/5719181.html" class="bare">https://www.cnblogs.com/wnfindbug/p/5719181.html</a></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="脚本开发与测试执行">脚本开发与测试执行</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>本文将以"新增图书"功能为测试示例，介绍性能测试的方法和过程，性能测试工具使用 Jmeter</p>
+</li>
+<li>
+<p>本文未进行描述的 Jmeter 配置，有配置需求的请参考 Jmeter 官方配置说明</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="创建线程组">创建线程组</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>启动 jmeter ，创建线程组<br>
+右击 <code>TestPlan</code> ,选择 <code>Add&#8594;Treads(Users)&#8594;Thread Group</code></p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/CreateThreadGroup.png" alt="创建线程组">
+</div>
+<div class="title">Figure 2. 创建线程组</div>
+</div>
+</li>
+<li>
+<p>设置一个 <code>Name</code> ，例如 <code>demo</code></p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo001.png" alt="创建线程组">
+</div>
+<div class="title">Figure 3. 创建线程组</div>
+</div>
+</li>
+<li>
+<p>配置 <code>Thread Properties</code> 执行策略，参见<a href="#set-thread-starting-strategy">配置线程启动策略</a></p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="创建请求消息">创建请求消息</h3>
+<div class="paragraph">
+<p>本文介绍代理录制、 badboy 录制、手动创建三种创建方式，实际测试中根据自身情况选择一种方式即可。</p>
+</div>
+<div class="sect3">
+<h4 id="代理录制请求消息">代理录制请求消息</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>创建 <code>HTTP(S) Test Script Recorder</code></p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo002.png" alt="创建录制代理">
+</div>
+<div class="title">Figure 4. 创建录制代理</div>
+</div>
+</li>
+<li>
+<p>配置 <code>port</code> 和 <code>Target Controller</code></p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo003.png" alt="创建录制代理">
+</div>
+<div class="title">Figure 5. 创建录制代理</div>
+</div>
+</li>
+<li>
+<p>登录系统，进入图书界面,设置浏览器代理</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>本文只测试新增图书这一简单场景，所以先进到界面后再设置代理，这样录制到的消息只是新增图书的消息。具体测试中以具体的功能业务灵活调整。</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo004.png" alt="图书界面">
+</div>
+<div class="title">Figure 6. 图书界面</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo005.png" alt="浏览器代理设置">
+</div>
+<div class="title">Figure 7. 浏览器代理设置</div>
+</div>
+</li>
+<li>
+<p>启动 <code>HTTP(S) Test Script Recorder</code><br>
+点击start启动</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo006.png" alt="启动代理服务">
+</div>
+<div class="title">Figure 8. 启动代理服务</div>
+</div>
+</li>
+<li>
+<p>浏览器操作新增图书动作，新增成功</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo007.png" alt="新增图书">
+</div>
+<div class="title">Figure 9. 新增图书</div>
+</div>
+</li>
+<li>
+<p>停止 <code>HTTP(S) Test Script Recorder</code> ，查看录制的脚本（脚本根据实际情况调整消息请求，删除无用请求）</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo008.png" alt="录制脚本">
+</div>
+<div class="title">Figure 10. 录制脚本</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="badboy_录制请求消息">badboy 录制请求消息</h4>
+<div class="paragraph">
+<p>通过 Jmeter 代理录制脚本后，会产生大量的无用的请求，尽管在代理中已经过滤了一部分图片或者 CSS、JS 文件。使用 badboy 录制可以提高开发效率。</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/badboy001.png" alt="打开Badboy">
+</div>
+<div class="title">Figure 11. 打开 Badboy</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>在地址框输入要录入的 URL 地址，然后进行一些列你想要的操作</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/badboy002.png" alt="Badboy录制">
+</div>
+<div class="title">Figure 12. Badboy 录制</div>
+</div>
+</li>
+<li>
+<p>录制完成后，直接导出为 Jmeter 脚本</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/badboy003.png" alt="Badboy导出脚本">
+</div>
+<div class="title">Figure 13. Badboy 导出脚本</div>
+</div>
+</li>
+<li>
+<p>Jmeter 打开录制导出的 <code>Jmeter</code> 脚本</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo008.png" alt="录制脚本">
+</div>
+<div class="title">Figure 14. 录制脚本</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="手动创建请求消息">手动创建请求消息</h4>
+<div class="paragraph">
+<p>手动创建即按照业务请求直接创建消息 <code>sampler</code> ，对工具不熟悉者且业务逻辑复杂的建议使用录制。手动创建可以通过浏览器开发者工具或者抓包工具查看请求消息和响应消息，用 Jmeter 相应的组件实现模拟请求。具体业务具体分析，以下步骤仅供参考：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>添加 HTTP Request Defaults</p>
+</li>
+<li>
+<p>添加 HTTP Header Manager</p>
+</li>
+<li>
+<p>添加 HTTP Request</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/jmeter002.png" alt="手动创建">
+</div>
+<div class="title">Figure 15. 手动创建</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="参数化">参数化</h3>
+<div class="paragraph">
+<p>性能测试需要模拟多用户并发，请求与用户应该是一一对应，所以需要对请求消息内容进行参数化，从而实现请求与用户一一对应。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">"author__name": "${__RandomString(10,AaBbCcDdEeFfGgHhIiJjKkLlMmNn,teststring)}",</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>参数化方法有以下几种</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>用 Jmeter 中的函数获取参数值，<code><em>Random</code>，<code></em>threadNum</code>，<code><em>CSVRead</code>，<code></em>StringFromFile</code>，具体调用方法如下：<br>
+<code>${<em>Random(,,)}</code>，<code>$</code>，<code>${</em>CSVRead(,)}</code>，<code>${<em>StringFromFile(,,,)}</code>。<br>
+参看Jmeter函数的使用，通过菜单“选项”&#8594;“函数助手对话框”，即可在“函数助手”弹出框上找到Jmeter的函数。<br>
+其中 <code>${</em>Random(,,)}</code> 方法的第一个参数为随机数的下限，第二个参数为随机数的上限，第三个参数为储存随机数的变量名； <code>${<em>CSVRead(,)}</code> 方法中第一个参数是文件名，第二个参数是文件中的列（列数从0开始）； <code>${</em>StringFromFile(,,,)}</code> 方法中第一个参数是文件名，<code>${<em>StringFromFile(,,,)}</code> 方法中没有指定读取文件中的哪一列的参数，所以 <code>${</em>StringFromFile(,,,)}</code> 只能读取包含一列的文件。</p>
+</li>
+<li>
+<p>用户定义的变量</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>添加“配置元件”&#8594;“用户定义的变量”</p>
+</li>
+<li>
+<p>“名称”中输入变量名称，此处以登录为例，定义两个变量 <code><strong>username</strong></code> 和 <code><strong>password</strong></code> 。“值”中可以直接输入值，也可以通过 Jmeter 的函数 <code><em>CSVRead</code> ，<code></em>StringFromFile</code> 从 <code>csv</code> 或 <code>dat</code> 文件中读取，还可以通过前缀加随机数的方法设置参数。<br>
+当参数值是某个前缀加一个数字时，可以用前缀名加 <code>${<em>Random(,,)}</code> 或 <code>$</code> 的方法设置参数值。如进行登录测试之前，先准备了用户名为 <code>perf_0</code> 到 <code>perf_1000</code> 的用户，那么用户名就可以设为 <code>perf_{</em>Random(0,1000,)}</code> 。<br>
+当参数值没有规律的且量不太大时，可以通过 <code>${<em>CSVRead(,)}</code> ， <code>${</em>StringFromFile(,,,)}</code>  从文件中读取，如将用户名和密码保存在 <code>user.csv</code> 文件中，<code>user.csv</code> 的内容如下：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">oriana,123456
+admin,admin
+dandan,123456</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>因为 <code><strong>user.csv</strong></code> 文件中有两列数据，所以只能用 <code>${<em>CSVRead(,)}</code> 函数， <code>username</code> 参数后的值设为 <code>${</em>CSVRead(user.csv,0)}</code> ， <code>password</code> 参数后的值设为 <code>${__CSVRead(user.csv,1)}</code> 。</p>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>从 csv 文件中读取<br>
+当参数的值没有规律且量不太大时，可以用这种方法。<br>
+具体做法如下：</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>创建一个 csv 文件，内容为参数的值集，每一个参数占一列，第一行就开始写参数值，不要写参数名</p>
+</li>
+<li>
+<p>在测试计划或线程组中添加一个“配置元件”&#8594; <code>“CSV Data Set Config”</code></p>
+</li>
+<li>
+<p><code>Filename</code> 中填写 csv 文件的完整路径（当 <code>csv</code> 文件在 <code>bin</code> 目录下时，只需给出文件名即可）</p>
+</li>
+<li>
+<p><code>Virable Names</code> 中填写变量名，如果 csv 文件中有多个变量，则用逗号隔开</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>从数据库中获取,当参数的值没有规律且量比较大时，可以选用这种方法,暂不做详细介绍。</p>
+</li>
+<li>
+<p>用正则表达式从前面请求的响应数据中提取，具体操作见 Jmeter 官方文档正则表达式提取器</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="断言可选">断言（可选）</h3>
+<div class="paragraph">
+<p>断言用来判断响应是否符合预期，一般性能测试时不会使用，因为会消耗一定的性能影响测试结果，性能测试是否成功一般可以在执行完成后进行数据统计，计算成功率。本文不做详细介绍，有需要的同学请参考 Jmeter 官方文档</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="集合点可选">集合点（可选）</h3>
+<div class="paragraph">
+<p>通过计时器 <code>Synchronizing Timer</code> 实现的假集合点功能, <code>Synchronizing Timer</code> 界面有两个参数设置，<code>Number of Simulated User to Group</code> 和 <code>Timeout in milliseconds</code></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>Number of Simulated User to Group</code> ： 模拟用户到组数,即设置组的用户数，达到该用户数后才进行接口的请求</p>
+</li>
+<li>
+<p><code>Timeout in milliseconds</code> : 超时（毫秒）,设置超时时间，即组在超时时间后达不到设置的线程数时，会丢弃继续请求</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo013.png" alt="集合点">
+</div>
+<div class="title">Figure 16. 集合点</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="关联可选">关联（可选）</h3>
+<div class="paragraph">
+<p>关联有以下两种方法：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>从前一个请求中取，用正则表达式提取器。<br>
+具体方法，在需要获得数据的请求上右击添加一个后置处理器-&#8594;正则表达式提取器<br>
+引用名称即下一个请求要引用的参数名称，如填写 <code>title</code> ，则可用 <code>${title}</code> 引用它。<br>
+正则表达式中()括起来的部分就是要提取的。.代表任意字符，*代表出现任意次。<br>
+模板，用 <code>$$</code> 引用起来，如果在正则表达式中有多个正则表达式（多个括号括起来的东东），则可以是 <code>$2$</code> ， <code>$3$</code> 等等，表示解析到的第几个值给 <code>title</code> 。<br>
+匹配数字，0代表随机，-1代表所有，其余正整数代表将在检查的内容中，第几个匹配的内容提取出来。</p>
+</li>
+<li>
+<p>用 <code>xpath</code> 从前一个请求中取。这种形式比较适合于返回为 xml 片段的情况。<br>
+在需要获得数据的请求上右击添加一个后置处理器-&#8594; <code>xPath Extractor</code> 。<br>
+引用名称即下一个请求要引用的参数名称，如填写 <code>body</code> ，则可用 <code>${body}</code> 引用它。<br>
+<code>XPath query</code> ，即 <code>xpath</code> 的表达式，要符合 <code>xpath</code> 的语法。</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="设置思考时间可选">设置思考时间（可选）</h3>
+<div class="paragraph">
+<p>用户界面操作会有一定的操作时间，则性能测试时合理添加思考时间更能贴近实际使用场景，从而获得更可靠的性能数据</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo009.png" alt="思考时间">
+</div>
+<div class="title">Figure 17. 思考时间</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="添加_jmeter_监听">添加 Jmeter 监听</h3>
+<div class="paragraph">
+<p>创建监听 <code>Aggregate Report，View Results Tree</code></p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo010.png" alt="监听">
+</div>
+<div class="title">Figure 18. 监听</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="部署服务器监听">部署服务器监听</h3>
+<div class="paragraph">
+<p>监听可以使用 jmeter 插件<a href="#jpgc">Jmeter 安装 jpgc 插件(可选)</a> 或 <a href="#nmon">安装 nmon(可选)</a>，使用 jmeter 则推荐使用插件，其他性能工具可以使用 <code>nmon</code>。使用 jpgc ，参考<a href="#jpgc">Jmeter 安装 jpgc 插件(可选)</a>安装插件，使用步骤如下</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>添加 <code>jp@gc - PerfMon Metrics Collector</code></p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/jmeter003.png" alt="jp@gc监听">
+</div>
+<div class="title">Figure 19. jp@gc监听</div>
+</div>
+</li>
+<li>
+<p>配置监控的服务器以及监控内容</p>
+<div class="imageblock">
+<div class="content">
+<img src="/images/jmeter004.png" alt="jp@gc监听">
+</div>
+<div class="title">Figure 20. jp@gc监听</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="set-thread-starting-strategy">配置线程启动策略</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>线程数：虚拟用户数。一个虚拟用户占用一个进程或线程。 设置多少个虚拟用户数在这里也就是设置多少个线程数。</p>
+</li>
+<li>
+<p>准备时长：设置的虚拟用户数需要多长时间全部启动。如果线程数为20，准备时长为10，那么需要10秒钟启动20个线程。也就是每秒钟启动2个线程。</p>
+</li>
+<li>
+<p>循环次数：每个线程发送请求的次数。如果线程数为20， 循环次数为100，那么每个线程发送100次请求。总请求数为20*100=2000。如果勾选了 <code>永远</code> ,那么所有线程会一直发送请求，直到选择停止运行脚本。 <code>1S=1000MS,1MIN=60000MS,1H=3600000MS</code></p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo011.png" alt="启动策略">
+</div>
+<div class="title">Figure 21. 启动策略</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="执行测试">执行测试</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>运行线程</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="/images/demo012.png" alt="运行线程">
+</div>
+<div class="title">Figure 22. 运行线程</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="测试结果分析与调优">测试结果分析与调优</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="结果分析">结果分析</h3>
+<div class="paragraph">
+<p>指标说明请参考 <a href="#KPI">性能指标说明</a></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>查看结果树  <code>view results tree</code> 为了减少性能消耗该项建议勾选只显示错误消息，相关指标可以查看聚合报告或添加其他监听。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">Thread Name: 线程组名称
+Sample Start: 启动开始时间
+Load time: 加载时长
+Latency: 等待时长
+Size in bytes: 发送的数据总大小 1GB＝1024MB，1MB＝1024KB，1KB＝1024Bytes Headers
+size in bytes: 发送头大小
+Body size in bytes: 发送数据的其余部分大小
+Sample Count: 发送统计
+Error Count: 交互错误统计
+Response code: 返回码
+Response message: 返回信息
+Response headers: 返回的头部信息</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>聚合报告  <code>aggregate report</code></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">Label：请求类型，对应在测试计划下填写的请求名称。
+Samples：当前发送到服务器的请求总数，对应图形报表中的样本数目。
+Average：平均响应时间，计算方法是总运行时间除以发送到服务器的总请求数，对应图形报表中的平均值。
+Median：中位数,也就是50%用户的响应时间,即图形报表中的中间值。
+90%Line：90%用户的响应时间
+95%Line：95%用户的响应时间
+99%Line：99%用户的响应时间
+Min：服务器响应的最短时间
+Max: 服务器响应的最长时间
+Error%: 请求返回错误的百分比
+Throughput: 服务器每单位时间处理的请求数，对应图形报表中的吞吐量。
+KB/sec: 每秒钟请求的字节数。</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="性能瓶颈">性能瓶颈</h3>
+<div class="paragraph">
+<p>性能测试调优需要先发现瓶颈，那么系统一般会存在哪些瓶颈：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>硬件上的性能瓶颈：</p>
+<div class="paragraph">
+<p>一般指的是 CPU 、内存、磁盘 I/O 方面的问题，分为服务器硬件瓶颈、网络瓶颈（对局域网可以不考虑）、服务器操作系统瓶颈（参数配置）、中间件瓶颈（参数配置、数据库、 web 服务器等）、应用瓶颈（ SQL 语句、数据库设计、业务逻辑、算法等）。</p>
+</div>
+</li>
+<li>
+<p>应用软件上的性能瓶颈：</p>
+<div class="paragraph">
+<p>一般指的是应用服务器、 web 服务器等应用软件，还包括数据库系统。例如：中间件 weblogic 平台上配置的 JDBC 连接池的参数设置不合理，造成的瓶颈。</p>
+</div>
+</li>
+<li>
+<p>应用程序上的性能瓶颈：</p>
+<div class="paragraph">
+<p>一般指的是开发人员新开发出来的应用程序。例如，程序架构规划不合理，程序本身设计有问题（串行处理、请求的处理线程不够），造成系统在大量用户访问时性能低下而造成的瓶颈。</p>
+</div>
+</li>
+<li>
+<p>操作系统上的性能瓶颈：</p>
+<div class="paragraph">
+<p>一般指的是 windows、UNIX、Linux 等操作系统。例如，在进行性能测试，出现物理内存不足时，虚拟内存设置也不合理，虚拟内存的交换效率就会大大降低，从而导致行为的响应时间大大增加，这时认为操作系统上出现性能瓶颈。</p>
+</div>
+</li>
+<li>
+<p>网络设备上的性能瓶颈：</p>
+<div class="paragraph">
+<p>一般指的是防火墙、动态负载均衡器、交换机等设备。例如，在动态负载均衡器上设置了动态分发负载的机制，当发现某个应用服务器上的硬件资源已经到达极限时，动态负载均衡器将后续的交易请求发送到其他负载较轻的应用服务器上。在测试时发现，动态负载均衡器没有起到相应的作用，这时可以认为网络瓶颈。</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>性能测试出现的原因及其定位十分复杂，这里只是简单介绍常见的几种瓶颈类型和特征，而性能测试所需要做的就是根据各种情况因素综合考虑，然后协助开发人员，DBA ，运维人员一起定位性能瓶颈。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="性能调优">性能调优</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>确定问题</p>
+<div class="ulist">
+<ul>
+<li>
+<p>应用程序代码：在通常情况下，很多程序的性能问题都是写出来的，因此对于发现瓶颈的模块，应该首先检查一下代码。</p>
+</li>
+<li>
+<p>数据库配置：经常引起整个系统运行缓慢，一些诸如 oracle 的大型数据库都是需要DBA进行正确的参数调整才能投产的。</p>
+</li>
+<li>
+<p>操作系统配置：不合理就可能引起系统瓶颈。</p>
+</li>
+<li>
+<p>硬件设置：硬盘速度、内存大小等都是容易引起瓶颈的原因，因此这些都是分析的重点。</p>
+</li>
+<li>
+<p>网络：网络负载过重导致网络冲突和网络延迟。</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>分析问题</p>
+<div class="paragraph">
+<p>当确定了问题之后，我们要明确这个问题影响的是响应时间吞吐量，还是其他问题？是多数用户还是少数用户遇到了问题？如果是少数用户，这几个用户与其它用户的操作有什么不用？系统资源监控的结果是否正常？ CPU 的使用是否到达极限？ I/O  情况如何？问题是否集中在某一类模块中？ 是客户端还是服务器出现问题？ 系统硬件配置是否够用？实际负载是否超过了系统的负载能力？ 是否未对系统进行优化？<br>
+通过这些分析及一些与系统相关的问题，可以对系统瓶颈有更深入的了解，进而分析出真正的原因。</p>
+</div>
+</li>
+<li>
+<p>确定调整目标和解决方案</p>
+<div class="paragraph">
+<p>提高系统吞吐量，缩短响应时间，更好地支持并发。</p>
+</div>
+</li>
+<li>
+<p>测试解决方案</p>
+<div class="paragraph">
+<p>对通过解决方案调优后的系统进行基准测试。（基准测试是指通过设计科学的测试方法、测试工具和测试系统，实现对一类测试对象的某项性能指标进行定量的和可对比的测试）</p>
+</div>
+</li>
+<li>
+<p>分析调优结果</p>
+<div class="paragraph">
+<p>系统调优是否达到或者超出了预定目标？系统是整体性能得到了改善，还是以系统某部分性能来解决其他问题。调优是否可以结束了。</p>
+</div>
+</li>
+<li>
+<p>如果达到了预期目标，调优工作就基本可以结束了。如果未达标则重复以上步骤。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="性能测试报告">性能测试报告</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>参考 <a href="http://121.43.182.128:16080/pub/docs/output/" class="bare">http://121.43.182.128:16080/pub/docs/output/</a> 性能测试报告-模板样例.doc</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="附件">附件</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="KPI">性能指标说明</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>注册用户数<br>
+注册用户数指软件中已经注册的用户，这些用户是系统的潜在用户，随时都有可能上线。这个指标的意义在于让测试工程师了解系统数据中的数据总量和系统最大可能有多少用户同时在线。</p>
+</li>
+<li>
+<p>在线用户数<br>
+在线用户数是指某一时刻已经登录系统的用户数量。在线用户数只是统计了登录系统的用户数量，这些用户不一定都对系统进行操作，对服务器产生压力。</p>
+</li>
+<li>
+<p>并发用户数<br>
+不同于在线用户数，并发用户数是指某一时刻向服务器发送请求的在线用户数，他是衡量服务器并发容量和同步协调能力的重要指标，从这个含义上讲，我们可能会如下两种理解：<br>
+同一时刻向服务器发送相同或者不同请求的用户数，也就是说，既可以包括对某一业务的相同请求，也可以包括对多个业务的不同请求<br>
+同一时刻向服务器发送相同请求的用户数，仅限于某一业务的相同请求</p>
+</li>
+<li>
+<p>请求的响应时间<br>
+响应时间就是用户感受软件系统为其服务所消耗的时间。对于 web 系统，请求的响应时间指的是从客户端发起的一个请求时间，到客户端接收到从服务器返回的响应结束。</p>
+</li>
+<li>
+<p>在3秒之内，页面给予用户响应所有显示，可认为是很不错的</p>
+</li>
+<li>
+<p>在3-5秒之内，页面给予用户响应所有显示，可认为是好的</p>
+</li>
+<li>
+<p>在5-10秒之内，页面给予用户响应所有提示，可认为是勉强接收的</p>
+</li>
+<li>
+<p>超过10秒后就有点让人不耐烦，用户很坑不会继续等待下去</p>
+</li>
+<li>
+<p>事务的响应时间<br>
+事务是指用户在客户端做一种或多种业务所需要的操作集，事务的响应时间就是衡量用户执行这些操作集所花费的时间。在性能测试中，一般通过计算事务的开始时间和结束时间的差值来获取事务的响应时间。</p>
+</li>
+<li>
+<p>每秒点击数<br>
+每秒点击数是指每秒钟像 web 服务器提交的 HTTP 请求数，它是衡量服务器处理能力的一个常用指标。需要注意的是，这里的响应时间并非鼠标的一次单击操作，因为在一次单击操作中，客户端可能向服务器发出多个 HTTP 请求，切勿混淆。</p>
+</li>
+<li>
+<p>吞吐率<br>
+吞吐率通常指单位时间内从服务器返回的字节数，也可以单位时间内客户提交的请求数。吞吐率是大型web系统衡量自身负载能力的一个重要指标，一般来说，吞吐率越大，单位时间内处理的数据就越多，系统的负载能力也强。吞吐率与很多因素有关，服务器的硬件配置，网络的宽带及拓扑结构，软件的技术架构等。</p>
+</li>
+<li>
+<p>业务成功率<br>
+指多用户对某一业务发起操作的成功率。例如，测试网络订票系统的并发处理性能，在早上8:00——8:30半小时的高峰里，要求能支持10万比订票业务，其中成功率不少于98%。也就是说系统允许200笔订票业务超时或者因其他原因导致未能订票成功。</p>
+</li>
+<li>
+<p>TPS<br>
+TPS 表示服务器每秒处理的事务数，他是衡量系统处理能力的一个非常重要的指标，在性能测试中，通过检测不同用户的 TPS ,可以估算出系统处理能力的拐点。</p>
+</li>
+<li>
+<p>资源利用率<br>
+资源利用率就是指资源的使用情况，如 CPU 使用率、内存使用率、网络宽带的使用情况、磁盘 I/O 的输入输出量等系统硬件方面的监控指标。一个完整的系统是由软件和硬件组成，缺了任何一方都不可能成为一个正常运作的系统，所以资源利用率也是测试人员的一个监控点，并在当前软件的发展趋势下，硬件资源的成本也不可小视。</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="nmon指标说明">nmon指标说明</h3>
+<div class="paragraph">
+<p><a href="https://blog.csdn.net/saraul/article/details/8570781" class="bare">https://blog.csdn.net/saraul/article/details/8570781</a></p>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">Selenium使用指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+            
+                
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/softwiretest/2020/01/21/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95%E7%AE%A1%E7%90%86.html">软件测试管理</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/guide/2020/11/11/%E7%99%BD%E7%9B%92%E6%B5%8B%E8%AF%95%E6%96%B9%E6%B3%95.html">白盒测试方法</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/guide/2020/10/11/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97(Jmeter).html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/guide/2020/10/11/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97(Jmeter).html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Tags</title>
+    <meta name="description" content="halley.fang 个人博客">
+    <meta name="keywords" content=" ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/tag/">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a class="active" href="/tag/">
+                    
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix">
+    <div class="my-main-content">
+        <h1>Tags</h1>
+        <hr>
+        
+        
+
+        <ul>
+        
+          <h2 id="SoftwireTest">SoftwireTest</h2>
+          
+            <li>
+                <time>
+                2020-01-21 Tue.
+                </time>
+                <a class="title" href="/softwiretest/2020/01/21/%E8%BD%AF%E4%BB%B6%E6%B5%8B%E8%AF%95%E7%AE%A1%E7%90%86.html">软件测试管理</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#SoftwireTest" title="Category: SoftwireTest" rel="category">SoftwireTest</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#SoftwireTest" title="Tag: SoftwireTest" rel="tag" style="color: blue;">SoftwireTest</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="SpringBootTest">SpringBootTest</h2>
+          
+            <li>
+                <time>
+                2021-07-27 Tue.
+                </time>
+                <a class="title" href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">Junit源码阅读_springrunner</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#SpringBootTest" title="Tag: SpringBootTest" rel="tag" style="color: blue;">SpringBootTest</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="appium">appium</h2>
+          
+            <li>
+                <time>
+                2021-05-25 Tue.
+                </time>
+                <a class="title" href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#appium" title="Category: appium" rel="category">appium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#appium" title="Tag: appium" rel="tag" style="color: blue;">appium</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="arithmetic">arithmetic</h2>
+          
+            <li>
+                <time>
+                2021-03-01 Mon.
+                </time>
+                <a class="title" href="/training/2021/03/01/%E5%86%92%E6%B3%A1%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95.html">冒泡排序算法及优化算法</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#training" title="Category: training" rel="category">training</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#training" title="Tag: training" rel="tag" style="color: blue;">training</a>&nbsp;
+    
+        <a href="/tag/#arithmetic" title="Tag: arithmetic" rel="tag" style="color: blue;">arithmetic</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="guide">guide</h2>
+          
+            <li>
+                <time>
+                2021-05-15 Sat.
+                </time>
+                <a class="title" href="/guide/2021/05/15/app%E6%B5%8B%E8%AF%95%E6%B5%81%E7%A8%8B%E5%92%8C%E6%B5%8B%E8%AF%95%E7%82%B9.html">App测试流程和测试点</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#guide" title="Tag: guide" rel="tag" style="color: blue;">guide</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="junit">junit</h2>
+          
+            <li>
+                <time>
+                2021-07-15 Thu.
+                </time>
+                <a class="title" href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-07-06 Tue.
+                </time>
+                <a class="title" href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-07-01 Thu.
+                </time>
+                <a class="title" href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="mockito">mockito</h2>
+          
+            <li>
+                <time>
+                2020-12-03 Thu.
+                </time>
+                <a class="title" href="/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html">Junit+mockito+powermock单元测试初探</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#mockito" title="Tag: mockito" rel="tag" style="color: blue;">mockito</a>&nbsp;
+    
+        <a href="/tag/#powermock" title="Tag: powermock" rel="tag" style="color: blue;">powermock</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="powermock">powermock</h2>
+          
+            <li>
+                <time>
+                2020-12-03 Thu.
+                </time>
+                <a class="title" href="/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html">Junit+mockito+powermock单元测试初探</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#mockito" title="Tag: mockito" rel="tag" style="color: blue;">mockito</a>&nbsp;
+    
+        <a href="/tag/#powermock" title="Tag: powermock" rel="tag" style="color: blue;">powermock</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="selenium">selenium</h2>
+          
+            <li>
+                <time>
+                2021-05-18 Tue.
+                </time>
+                <a class="title" href="/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Selenium_pagefactory源码阅读</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#selenium" title="Category: selenium" rel="category">selenium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#selenium" title="Tag: selenium" rel="tag" style="color: blue;">selenium</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-05-12 Wed.
+                </time>
+                <a class="title" href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">Selenium使用指南</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#selenium" title="Category: selenium" rel="category">selenium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#selenium" title="Tag: selenium" rel="tag" style="color: blue;">selenium</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="testng">testng</h2>
+          
+            <li>
+                <time>
+                2021-06-27 Sun.
+                </time>
+                <a class="title" href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#testng" title="Category: testng" rel="category">testng</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#testng" title="Tag: testng" rel="tag" style="color: blue;">testng</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="training">training</h2>
+          
+            <li>
+                <time>
+                2021-03-01 Mon.
+                </time>
+                <a class="title" href="/training/2021/03/01/%E5%86%92%E6%B3%A1%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95.html">冒泡排序算法及优化算法</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#training" title="Category: training" rel="category">training</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#training" title="Tag: training" rel="tag" style="color: blue;">training</a>&nbsp;
+    
+        <a href="/tag/#arithmetic" title="Tag: arithmetic" rel="tag" style="color: blue;">arithmetic</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="参考指南">参考指南</h2>
+          
+            <li>
+                <time>
+                2021-07-01 Thu.
+                </time>
+                <a class="title" href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-05-25 Tue.
+                </time>
+                <a class="title" href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#appium" title="Category: appium" rel="category">appium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#appium" title="Tag: appium" rel="tag" style="color: blue;">appium</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-05-12 Wed.
+                </time>
+                <a class="title" href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">Selenium使用指南</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#selenium" title="Category: selenium" rel="category">selenium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#selenium" title="Tag: selenium" rel="tag" style="color: blue;">selenium</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2020-12-03 Thu.
+                </time>
+                <a class="title" href="/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html">Junit+mockito+powermock单元测试初探</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#mockito" title="Tag: mockito" rel="tag" style="color: blue;">mockito</a>&nbsp;
+    
+        <a href="/tag/#powermock" title="Tag: powermock" rel="tag" style="color: blue;">powermock</a>&nbsp;
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2020-11-11 Wed.
+                </time>
+                <a class="title" href="/guide/2020/11/11/%E7%99%BD%E7%9B%92%E6%B5%8B%E8%AF%95%E6%96%B9%E6%B3%95.html">白盒测试方法</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2020-10-11 Sun.
+                </time>
+                <a class="title" href="/guide/2020/10/11/%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97(Jmeter).html">性能测试指南(jmeter)</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="流程与规范">流程与规范</h2>
+          
+            <li>
+                <time>
+                2020-01-08 Wed.
+                </time>
+                <a class="title" href="/guide/2020/01/08/SDLC.html">Sdlc</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#流程与规范" title="Tag: 流程与规范" rel="tag" style="color: blue;">流程与规范</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2020-01-01 Wed.
+                </time>
+                <a class="title" href="/guide/2020/01/01/%E7%89%88%E6%9C%AC%E6%B5%81%E7%A8%8B%E4%B8%8E%E8%A7%84%E8%8C%83.html">版本流程与规范</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#流程与规范" title="Tag: 流程与规范" rel="tag" style="color: blue;">流程与规范</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+          <h2 id="源码阅读">源码阅读</h2>
+          
+            <li>
+                <time>
+                2021-07-27 Tue.
+                </time>
+                <a class="title" href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">Junit源码阅读_springrunner</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#SpringBootTest" title="Tag: SpringBootTest" rel="tag" style="color: blue;">SpringBootTest</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-07-15 Thu.
+                </time>
+                <a class="title" href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-07-06 Tue.
+                </time>
+                <a class="title" href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-06-27 Sun.
+                </time>
+                <a class="title" href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#testng" title="Category: testng" rel="category">testng</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#testng" title="Tag: testng" rel="tag" style="color: blue;">testng</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+            <li>
+                <time>
+                2021-05-18 Tue.
+                </time>
+                <a class="title" href="/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Selenium_pagefactory源码阅读</a>
+
+                
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#selenium" title="Category: selenium" rel="category">selenium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+                
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <a href="/tag/#selenium" title="Tag: selenium" rel="tag" style="color: blue;">selenium</a>&nbsp;
+    
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </li>
+          
+        
+        </ul>
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+
+            <!-- Content -->
+            <div class="side content">
+                <div>
+                    Content
+                </div>
+                <ul id="content-side" class="content-ul">
+                    
+                    <li>
+                        <a data-scroll href="#SoftwireTest">
+                            SoftwireTest (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#SpringBootTest">
+                            SpringBootTest (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#appium">
+                            appium (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#arithmetic">
+                            arithmetic (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#guide">
+                            guide (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#junit">
+                            junit (3)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#mockito">
+                            mockito (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#powermock">
+                            powermock (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#selenium">
+                            selenium (2)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#testng">
+                            testng (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#training">
+                            training (1)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#参考指南">
+                            参考指南 (6)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#流程与规范">
+                            流程与规范 (2)
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a data-scroll href="#源码阅读">
+                            源码阅读 (5)
+                        </a>
+                    </li>
+                    
+
+                </ul>
+            </div>
+            <!-- 其他div框放到这里 -->
+            <!-- <div class="side">bbbb</div> -->
+        </div>
+    </div>
+</div>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Selenium使用指南</title>
+    <meta name="description" content="selenium 主要用于Web应用自动化测试，其主要包含三个部分：WebDriver、Selenium IDE、Grid">
+    <meta name="keywords" content="selenium参考指南,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>Selenium使用指南</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2021-05-12
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#selenium" title="Category: selenium" rel="category">selenium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#selenium" title="Tag: selenium" rel="tag">selenium</a-->
+        <a href="/tag/#selenium" title="Tag: selenium" rel="tag" style="color: blue;">selenium</a>&nbsp;
+    
+        <!--a href="/tag/#%E5%8F%82%E8%80%83%E6%8C%87%E5%8D%97" title="Tag: 参考指南" rel="tag">参考指南</a-->
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>selenium</code> 主要用于Web应用自动化测试，其主要包含三个部分：WebDriver、Selenium IDE、Grid</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="webdriver">WebDriver</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>WebDriver以原生的方式驱动浏览器，WebDriver通过与浏览器驱动进行通信对话向浏览器传递指令并接收响应结果。<br>
+驱动程序是特定于浏览器的，例如 ChromeDriver 对应于谷歌的 Chrome/Chromium， GeckoDriver 对应于 Mozilla 的 Firefox 的，等等。驱动程序在与浏览器相同的系统上运行。</p>
+</div>
+<div class="sect2">
+<h3 id="操控浏览器">操控浏览器</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>打开网站</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 简便的方法
+driver.get("https://selenium.dev");
+
+// 更长的方法
+driver.navigate().to("https://selenium.dev");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>获取当前 URL</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.getCurrentUrl();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>后退</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.navigate().back();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>前进</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.navigate().forward();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>刷新</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.navigate().refresh();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>获取标题</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.getTitle();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>窗口和标签页</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.getWindowHandle();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>切换窗口或标签页</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 存储原始窗口的 ID
+String originalWindow = driver.getWindowHandle();
+
+// 检查一下，我们还没有打开其他的窗口
+assert driver.getWindowHandles().size() == 1;
+
+// 点击在新窗口中打开的链接
+driver.findElement(By.linkText("new window")).click();
+
+// 等待新窗口或标签页
+wait.until(numberOfWindowsToBe(2));
+
+// 循环执行，直到找到一个新的窗口句柄
+for (String windowHandle : driver.getWindowHandles()) {if(!originalWindow.contentEquals(windowHandle)) {driver.switchTo().window(windowHandle);
+break;
+}
+}
+
+// 等待新标签完成加载内容
+wait.until(titleIs("Selenium documentation"));</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>创建新窗口(或)新标签页并且切换</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 打开新标签页并切换到新标签页
+driver.switchTo().newWindow(WindowType.TAB);
+
+// 打开一个新窗口并切换到新窗口
+driver.switchTo().newWindow(WindowType.WINDOW);</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>关闭窗口或标签页</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//关闭标签页或窗口
+driver.close();
+
+//切回到之前的标签页或窗口
+driver.switchTo().window(originalWindow);</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>在会话结束时退出浏览器</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.quit();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Frames and Iframes</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-html hljs" data-lang="html">&lt;div id="modal"&gt;
+  &lt;iframe id="buttonframe"name="myframe"src="https://seleniumhq.github.io"&gt;
+   &lt;button&gt;Click here&lt;/button&gt;
+ &lt;/iframe&gt;
+&lt;/div&gt;</code></pre>
+</div>
+</div>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>使用 WebElement</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 存储网页元素
+WebElement iframe = driver.findElement(By.cssSelector("#modal&gt;iframe"));
+
+// 切换到 frame
+driver.switchTo().frame(iframe);
+
+// 现在可以点击按钮
+driver.findElement(By.tagName("button")).click();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>使用 name 或 id</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 使用 ID
+driver.switchTo().frame("buttonframe");
+
+// 或者使用 name 代替
+driver.switchTo().frame("myframe");
+
+// 现在可以点击按钮
+driver.findElement(By.tagName("button")).click();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>使用索引</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 切换到第 2 个框架
+driver.switchTo().frame(1);</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>离开frames</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 回到顶层
+driver.switchTo().defaultContent();</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>窗口管理</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>获取窗口大小</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 分别获取每个尺寸
+int width = driver.manage().window().getSize().getWidth();
+int height = driver.manage().window().getSize().getHeight();
+
+// 或者存储尺寸并在以后查询它们
+Dimension size = driver.manage().window().getSize();
+int width1 = size.getWidth();
+int height1 = size.getHeight();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>设置窗口大小</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.manage().window().setSize(new Dimension(1024, 768));</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>得到窗口的位置</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 分别获取每个尺寸
+int x = driver.manage().window().getPosition().getX();
+int y = driver.manage().window().getPosition().getY();
+
+// 或者存储尺寸并在以后查询它们
+Point position = driver.manage().window().getPosition();
+int x1 = position.getX();
+int y1 = position.getY();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>设置窗口位置</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// 将窗口移动到主显示器的左上角
+driver.manage().window().setPosition(new Point(0, 0));</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>最大化窗口</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.manage().window().maximize();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>最小化窗口</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.manage().window().minimize();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>全屏窗口</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.manage().window().fullscreen();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>屏幕截图</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.chrome.ChromeDriver;
+import java.io.*;
+import org.openqa.selenium.*;
+
+public class SeleniumTakeScreenshot {
+public static void main(String args[]) throws IOException {
+WebDriver driver = new ChromeDriver();
+driver.get("http://www.example.com");
+File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+FileUtils.copyFile(scrFile, new File("./image.png"));
+driver.quit();
+}
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>元素屏幕截图</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import java.io.File;
+import java.io.IOException;
+
+public class SeleniumelementTakeScreenshot {
+public static void main(String args[]) throws IOException {
+WebDriver driver = new ChromeDriver();
+driver.get("https://www.example.com");
+WebElement element = driver.findElement(By.cssSelector("h1"));
+File scrFile = element.getScreenshotAs(OutputType.FILE);
+FileUtils.copyFile(scrFile, new File("./image.png"));
+driver.quit();
+}
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>执行脚本</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//Creating the JavascriptExecutor interface object by Type casting
+JavascriptExecutor js = (JavascriptExecutor)driver;
+//Button Element
+WebElement button =driver.findElement(By.name("btnLogin"));
+//Executing JavaScript to click on element
+js.executeScript("arguments[0].click();", button);
+//Get return value from script
+String text = (String) js.executeScript("return arguments[0].innerText", button);
+//Executing JavaScript directly
+js.executeScript("console.log('hello world')");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>打印页面</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.print.PrintOptions;
+
+    driver.get("https://www.selenium.dev");
+    printer = (PrintsPage) driver;
+
+    PrintOptions printOptions = new PrintOptions();
+    printOptions.setPageRanges("1-2");
+
+    Pdf pdf = printer.print(printOptions);
+    String content = pdf.getContent();</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="定位元素">定位元素</h3>
+<div class="sect3">
+<h4 id="定位策略">定位策略</h4>
+<div class="paragraph">
+<p>在 WebDriver 中有 8 种不同的内置元素定位策略：</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. 元素定位策略</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">定位</th>
+<th class="tableblock halign-left valign-top">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">class name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位class属性与搜索值匹配的元素（不允许使用复合类名）</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">css selector</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位 CSS 选择器匹配的元素</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">id</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位 id 属性与搜索值匹配的元素</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位 name 属性与搜索值匹配的元素</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">link text</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位link text可视文本与搜索值完全匹配的锚元素</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">partial link text</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位link text可视文本部分与搜索值部分匹配的锚点元素。如果匹配多个元素，则只选择第一个元素。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tag name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位标签名称与搜索值匹配的元素</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">xpath</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">定位与 XPath 表达式匹配的元素</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="相对定位">相对定位</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>above 元素上</p>
+<div class="paragraph">
+<p>返回当前指定元素位置上方的WebElement对象</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.openqa.selenium.support.locators.RelativeLocator.with;
+
+WebElement passwordField = driver.findElement(By.id("password"));
+WebElement emailAddressField = driver.findElement(with(By.tagName("input"))
+.above(passwordField));</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>below 元素下</p>
+<div class="paragraph">
+<p>返回当前指定元素位置下方的WebElement对象</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.openqa.selenium.support.locators.RelativeLocator.with;
+
+WebElement emailAddressField = driver.findElement(By.id("email"));
+WebElement passwordField = driver.findElement(with(By.tagName("input"))
+.below(emailAddressField));</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>toLeftOf 元素左</p>
+<div class="paragraph">
+<p>返回当前指定元素位置左方的WebElement对象</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.openqa.selenium.support.locators.RelativeLocator.with;
+
+WebElement submitButton = driver.findElement(By.id("submit"));
+WebElement cancelButton = driver.findElement(with(By.tagName("button"))
+.toLeftOf(submitButton));</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>toRightOf 元素右</p>
+<div class="paragraph">
+<p>返回当前指定元素位置右方的WebElement对象</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.openqa.selenium.support.locators.RelativeLocator.with;
+
+WebElement cancelButton = driver.findElement(By.id("cancel"));
+WebElement submitButton = driver.findElement(with(By.tagName("button")).toRightOf(cancelButton));</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>near 附近</p>
+<div class="paragraph">
+<p>返回当前指定元素位置附近大约px5050像素的WebElement对象</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import static org.openqa.selenium.support.locators.RelativeLocator.with;
+
+WebElement emailAddressLabel = driver.findElement(By.id("lbl-email"));
+WebElement emailAddressField = driver.findElement(with(By.tagName("input")).near(emailAddressLabel));</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="xpath">xpath</h4>
+<div class="paragraph">
+<p>XPath轴(XPath Axes)可定义某个相对于当前节点的节点集：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>child</p>
+<div class="paragraph">
+<p>选取当前节点的所有子元素</p>
+</div>
+</li>
+<li>
+<p>parent</p>
+<div class="paragraph">
+<p>选取当前节点的父节点</p>
+</div>
+</li>
+<li>
+<p>descendant</p>
+<div class="paragraph">
+<p>选取当前节点的所有后代元素（子、孙等）</p>
+</div>
+</li>
+<li>
+<p>ancestor</p>
+<div class="paragraph">
+<p>选取当前节点的所有先辈（父、祖父等）</p>
+</div>
+</li>
+<li>
+<p>descendant-or-self</p>
+<div class="paragraph">
+<p>选取当前节点的所有后代元素（子、孙等）以及当前节点本身</p>
+</div>
+</li>
+<li>
+<p>ancestor-or-self</p>
+<div class="paragraph">
+<p>选取当前节点的所有先辈（父、祖父等）以及当前节点本身</p>
+</div>
+</li>
+<li>
+<p>preceding-sibling</p>
+<div class="paragraph">
+<p>选取当前节点之前的所有同级节点</p>
+</div>
+</li>
+<li>
+<p>following-sibling</p>
+<div class="paragraph">
+<p>选取当前节点之后的所有同级节点</p>
+</div>
+</li>
+<li>
+<p>preceding</p>
+<div class="paragraph">
+<p>选取文档中当前节点的开始标签之前的所有节点</p>
+</div>
+</li>
+<li>
+<p>following</p>
+<div class="paragraph">
+<p>选取文档中当前节点的结束标签之后的所有节点</p>
+</div>
+</li>
+<li>
+<p>self</p>
+<div class="paragraph">
+<p>选取当前节点</p>
+</div>
+</li>
+<li>
+<p>attribute</p>
+<div class="paragraph">
+<p>选取当前节点的所有属性</p>
+</div>
+</li>
+<li>
+<p>namespace</p>
+<div class="paragraph">
+<p>选取当前节点的所有命名空间节点</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="等待">等待</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>显式等待</p>
+<div class="paragraph">
+<p>显示等待 是Selenium客户可以使用的命令式过程语言。它们允许您的代码暂停程序执行，或冻结线程，直到满足通过的 条件 。这个条件会以一定的频率一直被调用，直到等待超时。这意味着只要条件返回一个假值，它就会一直尝试和等待</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WebElement foo = new WebDriverWait(driver, Duration.ofSeconds(3))
+          .until(driver -&gt; driver.findElement(By.name("q")));
+assertEquals(foo.getText(), "Hello from JavaScript!");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>隐式等待</p>
+<div class="paragraph">
+<p>还有第二种区别于显示等待 类型的 隐式等待 。通过隐式等待，WebDriver在试图查找_任何_元素时在一定时间内轮询DOM。当网页上的某些元素不是立即可用并且需要一些时间来加载时是很有用的。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WebDriver driver = new FirefoxDriver();
+driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+driver.get("http://somedomain/url_that_delays_loading");
+WebElement myDynamicElement = driver.findElement(By.id("myDynamicElement"));</code></pre>
+</div>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>警告: 不要混合使用隐式和显式等待。这样做会导致不可预测的等待时间。例如，将隐式等待设置为10秒，将显式等待设置为15秒，可能会导致在20秒后发生超时。</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>流畅等待</p>
+<div class="paragraph">
+<p>流畅等待实例定义了等待条件的最大时间量，以及检查条件的频率。</p>
+</div>
+<div class="paragraph">
+<p>用户可以配置等待来忽略等待时出现的特定类型的异常，例如在页面上搜索元素时出现的NoSuchElementException。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Waiting 30 seconds for an element to be present on the page, checking
+// for its presence once every 5 seconds.
+Wait&lt;WebDriver&gt; wait = new FluentWait&lt;WebDriver&gt;(driver)
+  .withTimeout(Duration.ofSeconds(30))
+  .pollingEvery(Duration.ofSeconds(5))
+  .ignoring(NoSuchElementException.class);
+
+WebElement foo = wait.until(new Function&lt;WebDriver, WebElement&gt;() {
+  public WebElement apply(WebDriver driver) {
+    return driver.findElement(By.id("foo"));
+  }
+});</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>强制等待</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Thread.sleep(1000);</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="javascript_警告框提示框和确认框">JavaScript 警告框,提示框和确认框</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Alerts 警告框</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//Click the link to activate the alert
+driver.findElement(By.linkText("See an example alert")).click();
+
+//Wait for the alert to be displayed and store it in a variable
+Alert alert = wait.until(ExpectedConditions.alertIsPresent());
+
+//Store the alert text in a variable
+String text = alert.getText();
+
+//Press the OK button
+alert.accept();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Confirm 确认框</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//Click the link to activate the alert
+driver.findElement(By.linkText("See a sample confirm")).click();
+
+//Wait for the alert to be displayed
+wait.until(ExpectedConditions.alertIsPresent());
+
+//Store the alert in a variable
+Alert alert = driver.switchTo().alert();
+
+//Store the alert in a variable for reuse
+String text = alert.getText();
+
+//Press the Cancel button
+alert.dismiss();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Prompt 提示框</p>
+<div class="paragraph">
+<p>提示框与确认框相似, 不同之处在于它们还包括文本输入. 与处理表单元素类似, 您可以使用WebDriver的sendKeys来填写响应. 这将完全替换占位符文本. 按下取消按钮将不会提交任何文本</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//Click the link to activate the alert
+driver.findElement(By.linkText("See a sample prompt")).click();
+
+//Wait for the alert to be displayed and store it in a variable
+Alert alert = wait.until(ExpectedConditions.alertIsPresent());
+
+//Type your message
+alert.sendKeys("Selenium");
+
+//Press the OK button
+alert.accept();</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="http_代理">Http 代理</h3>
+<div class="paragraph">
+<p>使用代理服务器用于Selenium的自动化脚本, 可能对以下方面有益:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>捕获网络流量</p>
+</li>
+<li>
+<p>模拟网站后端响应</p>
+</li>
+<li>
+<p>在复杂的网络拓扑结构或严格的公司限制/政策下访问目标站点.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.Proxy;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+
+public class proxyTest {
+  public static void main(String[] args) {
+    Proxy proxy = new Proxy();
+    proxy.setHttpProxy("&lt;HOST:PORT&gt;");
+    ChromeOptions options = new ChromeOptions();
+    options.setCapability("proxy", proxy);
+    WebDriver driver = new ChromeDriver(options);
+    driver.get("https://www.google.com/");
+    driver.manage().window().maximize();
+    driver.quit();
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="页面加载策略">页面加载策略</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>normal</p>
+<div class="paragraph">
+<p>此配置使Selenium WebDriver等待整个页面的加载. 设置为 normal 时, Selenium WebDriver将保持等待, 直到 返回 load 事件</p>
+</div>
+<div class="paragraph">
+<p>默认情况下, 如果未设置页面加载策略, 则设置 normal 为初始策略.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.PageLoadStrategy;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class pageLoadStrategy {
+    public static void main(String[] args) {
+        ChromeOptions chromeOptions = new ChromeOptions();
+        chromeOptions.setPageLoadStrategy(PageLoadStrategy.NORMAL);
+        WebDriver driver = new ChromeDriver(chromeOptions);
+        try {
+            // Navigate to Url
+            driver.get("https://google.com");
+        } finally {
+            driver.quit();
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>eager</p>
+<div class="paragraph">
+<p>这将使Selenium WebDriver保持等待, 直到完全加载并解析了HTML文档, 该策略无关样式表, 图片和subframes的加载.</p>
+</div>
+<div class="paragraph">
+<p>设置为 eager 时, Selenium WebDriver保持等待, 直至返回 DOMContentLoaded 事件.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.PageLoadStrategy;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class pageLoadStrategy {
+    public static void main(String[] args) {
+        ChromeOptions chromeOptions = new ChromeOptions();
+        chromeOptions.setPageLoadStrategy(PageLoadStrategy.EAGER);
+        WebDriver driver = new ChromeDriver(chromeOptions);
+        try {
+            // Navigate to Url
+            driver.get("https://google.com");
+        } finally {
+            driver.quit();
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>none</p>
+<div class="paragraph">
+<p>设置为 none 时, Selenium WebDriver仅等待至初始页面下载完成.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.PageLoadStrategy;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class pageLoadStrategy {
+    public static void main(String[] args) {
+        ChromeOptions chromeOptions = new ChromeOptions();
+        chromeOptions.setPageLoadStrategy(PageLoadStrategy.NONE);
+        WebDriver driver = new ChromeDriver(chromeOptions);
+        try {
+            // Navigate to Url
+            driver.get("https://google.com");
+        } finally {
+            driver.quit();
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="webelement">WebElement</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Find Element</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WebDriver driver = new FirefoxDriver();
+
+driver.get("http://www.google.com");
+
+// Get search box element from webElement 'q' using Find Element
+WebElement searchBox = driver.findElement(By.name("q"));
+
+searchBox.sendKeys("webdriver");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Find Elements</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import java.util.List;
+
+public class findElementsExample {
+    public static void main(String[] args) {
+        WebDriver driver = new FirefoxDriver();
+        try {
+            driver.get("https://example.com");
+            // Get all the elements available with tag name 'p'
+            List&lt;WebElement&gt; elements = driver.findElements(By.tagName("p"));
+            for (WebElement element : elements) {
+                System.out.println("Paragraph text:" + element.getText());
+            }
+        } finally {
+            driver.quit();
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Find Element From Element</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WebDriver driver = new FirefoxDriver();
+driver.get("http://www.google.com");
+WebElement searchForm = driver.findElement(By.tagName("form"));
+WebElement searchBox = searchForm.findElement(By.name("q"));
+searchBox.sendKeys("webdriver");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Find Elements From Element</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.By;
+  import org.openqa.selenium.WebDriver;
+  import org.openqa.selenium.WebElement;
+  import org.openqa.selenium.chrome.ChromeDriver;
+  import java.util.List;
+
+  public class findElementsFromElement {
+      public static void main(String[] args) {
+          WebDriver driver = new ChromeDriver();
+          try {
+              driver.get("https://example.com");
+
+              // Get element with tag name 'div'
+              WebElement element = driver.findElement(By.tagName("div"));
+
+              // Get all the elements available with tag name 'p'
+              List&lt;WebElement&gt; elements = element.findElements(By.tagName("p"));
+              for (WebElement e : elements) {
+                  System.out.println(e.getText());
+              }
+          } finally {
+              driver.quit();
+          }
+      }
+  }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Get Active Element</p>
+<div class="paragraph">
+<p>此方法用于追溯或查找当前页面上下文中具有焦点的DOM元素.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class activeElementTest {
+  public static void main(String[] args) {
+    WebDriver driver = new ChromeDriver();
+    try {
+      driver.get("http://www.google.com");
+      driver.findElement(By.cssSelector("[name='q']")).sendKeys("webElement");
+
+      // Get attribute of current active element
+      String attr = driver.switchTo().activeElement().getAttribute("title");
+      System.out.println(attr);
+    } finally {
+      driver.quit();
+    }
+  }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Is Element Enabled</p>
+<div class="paragraph">
+<p>此方法用于检查网页上连接的元素是否被启用或禁用. 返回一个布尔值, 如果在当前浏览上下文中启用了连接的元素, 则返回True； 否则返回false .</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//navigates to url
+driver.get("https://www.google.com/");
+
+//returns true if element is enabled else returns false
+boolean value = driver.findElement(By.name("btnK")).isEnabled();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Is Element Selected</p>
+<div class="paragraph">
+<p>此方法确定是否 已选择 引用的元素. 此方法广泛用于复选框, 单选按钮, 输入元素和选项元素.</p>
+</div>
+<div class="paragraph">
+<p>返回一个布尔值, 如果在当前浏览上下文中 已选择 引用的元素, 则返回 True, 否则返回 False.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//navigates to url
+ driver.get("https://the-internet.herokuapp.com/checkboxes");
+
+ //returns true if element is checked else returns false
+ boolean value = driver.findElement(By.cssSelector("input[type='checkbox']:first-of-type")).isSelected();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Get Element TagName</p>
+<div class="paragraph">
+<p>此方法用于获取在当前浏览上下文中 具有焦点的被引用元素的 TagName .</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//navigates to url
+driver.get("https://www.example.com");
+
+//returns TagName of the element
+String value = driver.findElement(By.cssSelector("h1")).getTagName();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Get Element Rect</p>
+<div class="paragraph">
+<p>用于获取参考元素的尺寸和坐标.</p>
+</div>
+<div class="paragraph">
+<p>提取的数据主体包含以下详细信息:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>元素左上角的X轴位置</p>
+</li>
+<li>
+<p>元素左上角的y轴位置</p>
+</li>
+<li>
+<p>元素的高度</p>
+</li>
+<li>
+<p>元素宽度</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Navigate to url
+driver.get("https://www.example.com");
+
+// Returns height, width, x and y coordinates referenced element
+Rectangle res =  driver.findElement(By.cssSelector("h1")).getRect();
+
+// Rectangle class provides getX,getY, getWidth, getHeight methods
+System.out.println(res.getX());</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>获取元素CSS值</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Navigate to Url
+driver.get("https://www.example.com");
+
+// Retrieves the computed style property 'color' of linktext
+String cssValue = driver.findElement(By.linkText("More information...")).getCssValue("color");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>获取元素文本</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// Navigate to url
+driver.get("https://example.com");
+
+// Retrieves the text of the element
+String text = driver.findElement(By.cssSelector("h1")).getText();</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="keyboard_键盘事件">Keyboard 键盘事件</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>sendKeys</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+public class HelloSelenium {
+  public static void main(String[] args) {
+    WebDriver driver = new FirefoxDriver();
+    try {
+      // Navigate to Url
+      driver.get("https://google.com");
+
+      // Enter text "q" and perform keyboard action "Enter"
+      driver.findElement(By.name("q")).sendKeys("q" + Keys.ENTER);
+    } finally {
+      driver.quit();
+    }
+  }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>keyDown</p>
+<div class="paragraph">
+<p>keyDown用于模拟按下辅助按键(CONTROL, SHIFT, ALT)的动作.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">WebDriver driver = new ChromeDriver();
+try {
+  // Navigate to Url
+  driver.get("https://google.com");
+
+  // Enter "webdriver" text and perform "ENTER" keyboard action
+  driver.findElement(By.name("q")).sendKeys("webdriver" + Keys.ENTER);
+
+  Actions actionProvider = new Actions(driver);
+  Action keydown = actionProvider.keyDown(Keys.CONTROL).sendKeys("a").build();
+  keydown.perform();
+} finally {
+  driver.quit();
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>keyUp</p>
+<div class="paragraph">
+<p>keyUp用于模拟辅助按键(CONTROL, SHIFT, ALT)弹起或释放的操作.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.interactions.Actions;
+
+public class HelloSelenium {
+  public static void main(String[] args) {
+    WebDriver driver = new FirefoxDriver();
+    try {
+      // Navigate to Url
+      driver.get("https://google.com");
+      Actions action = new Actions(driver);
+
+      // Store google search box WebElement
+      WebElement search = driver.findElement(By.name("q"));
+
+      // Enters text "qwerty" with keyDown SHIFT key and after keyUp SHIFT key (QWERTYqwerty)
+      action.keyDown(Keys.SHIFT).sendKeys(search,"qwerty").keyUp(Keys.SHIFT).sendKeys("qwerty").perform();
+    } finally {
+      driver.quit();
+    }
+  }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>clear</p>
+<div class="paragraph">
+<p>清除可编辑元素的内容. 这仅适用于可编辑且可交互的元素, 否则Selenium将返回错误(无效的元素状态或元素不可交互).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class clear {
+  public static void main(String[] args) {
+    WebDriver driver = new ChromeDriver();
+    try {
+      // Navigate to Url
+      driver.get("https://www.google.com");
+      // Store 'SearchInput' element
+      WebElement searchInput = driver.findElement(By.name("q"));
+      searchInput.sendKeys("selenium");
+      // Clears the entered text
+      searchInput.clear();
+    } finally {
+      driver.quit();
+    }
+  }
+}</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="鼠标事件">鼠标事件</h3>
+<div class="sect3">
+<h4 id="proform">proform()</h4>
+<div class="paragraph">
+<p>调用ActionChains类方法时，不会立即执行，而是将所有操作都存放在一个队列里，当调用perform()方法时，队列里的操作会依次执行。可以理解为对鼠标事件的提交操作，所以首先要记住这个方法。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="事件">事件</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>click 单击鼠标左键</p>
+</li>
+<li>
+<p>clickAndHold 点击鼠标左键，不松开</p>
+</li>
+<li>
+<p>contextClick 点击鼠标右键</p>
+</li>
+<li>
+<p>doubleClick 双击鼠标左键</p>
+</li>
+<li>
+<p>dragAndDrop(source, target) 拖拽到某个元素然后松开</p>
+</li>
+<li>
+<p>dragAndDropByOffset(source, xoffset, yoffset) 拖拽到某个坐标然后松开</p>
+</li>
+<li>
+<p>moveByOffset(xoffset, yoffset)  鼠标从当前位置移动到某个坐标</p>
+</li>
+<li>
+<p>moveToElement(element)  鼠标移动到某个元素</p>
+</li>
+<li>
+<p>moveToElementWithOffset(to_element, xoffset, yoffset)  移动到距某个元素（左上角坐标）多少距离的位置</p>
+</li>
+<li>
+<p>release  在某个元素位置松开鼠标左键</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="remote_webdriver">Remote WebDriver</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">FirefoxOptions firefoxOptions = new FirefoxOptions();
+WebDriver driver = new RemoteWebDriver(new URL("http://www.example.com"), firefoxOptions);
+driver.get("http://www.google.com");
+driver.quit();</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>浏览器选项</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ChromeOptions chromeOptions = new ChromeOptions();
+chromeOptions.setCapability("browserVersion", "67");
+chromeOptions.setCapability("platformName", "Windows XP");
+WebDriver driver = new RemoteWebDriver(new URL("http://www.example.com"), chromeOptions);
+driver.get("http://www.google.com");
+driver.quit();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>本地文件检测器</p>
+<div class="paragraph">
+<p>本地文件检测器允许将文件从客户端计算机传输到远程服务器. 例如, 如果测试需要将文件上传到Web应用程序, 则远程WebDriver可以在运行时 将文件从本地计算机自动传输到远程Web服务器. 这允许从运行测试的远程计算机上载文件. 默认情况下未启用它, 可以通过以下方式启用:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.setFileDetector(new LocalFileDetector());</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>定义上述代码后, 您可以通过以下方式在测试中上传文件:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">driver.get("http://sso.dev.saucelabs.com/test/guinea-file-upload");
+WebElement upload = driver.findElement(By.id("myfile"));
+upload.sendKeys("/Users/sso/the/local/path/to/darkbulb.jpg");</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="selenium_ide">Selenium IDE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Selenium IDE可以方便的录制和管理测试用例，可以通过浏览器插件运行或者命令行运行，并且支持导出java和Python等语言代码（java基于junit生成代码）。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="grid">Grid</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>通过将客户端命令发送到远程浏览器的实例, Selenium Grid 允许在远程计算机 (虚拟或真实) 上执行WebDriver脚本. 它旨在提供一种在多台计算机上并行运行测试的简便方法.</p>
+</div>
+<div class="sect2">
+<h3 id="grid组成">Grid组成</h3>
+<div class="imageblock">
+<div class="content">
+<img src="/images/selenium/components.png" alt="Grid组成">
+</div>
+<div class="title">Figure 1. Grid组成</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Router</p>
+<div class="paragraph">
+<p>路由负责将请求转发到正确的组件.</p>
+</div>
+<div class="paragraph">
+<p>它是Grid的入口点, 所有外部请求都将由其接收. 路由的行为因请求而异. 当请求一个新的会话时, 路由将把它添加到新的会话队列中. 分发器定期检查是否有空闲槽. 若有, 则从新会话队列中删除第一个匹配请求. 如果请求属于存量会话, 这个路由将会话id发送到会话表, 会话表将返回正在运行会话的节点. 在此之后, 路由将 将请求转发到节点.</p>
+</div>
+<div class="paragraph">
+<p>为了更好地发挥效力, 路由通过将请求发送到组件的方式, 来平衡Grid的负载, 从而使处理过程中不会有任何的过载组件.</p>
+</div>
+</li>
+<li>
+<p>Distributor</p>
+<div class="paragraph">
+<p>分发器知道所有节点及其功能. 它的主要作用是接收新的会话请求 并找到可以在其中创建会话的适当节点. 创建会话后, 分发器在会话集合中存储会话ID与正在执行会话的节点之间的关系.</p>
+</div>
+</li>
+<li>
+<p>Node</p>
+<div class="paragraph">
+<p>一个节点可以在网格中出现多次. 每个节点负责管理其运行机器的可用浏览器的插槽.</p>
+</div>
+<div class="paragraph">
+<p>节点通过事件总线将其自身注册到分发服务器, 并且将其配置作为注册消息的组成部分一起发送.</p>
+</div>
+<div class="paragraph">
+<p>默认情况下, 节点自动注册其运行机器路径上的 所有可用浏览器驱动程序. 它还为基于Chromium的浏览器和Firefox的 每个可用CPU创建一个插槽. 对于Safari和Internet Explorer, 只创建一个插槽. 通过特定的配置, 它可以在Docker容器或中继命令中运行会话. 您可以在下一 章节 中看到更多配置详细信息.</p>
+</div>
+<div class="paragraph">
+<p>节点仅执行接收到的命令, 它不进行评估、做出判断或控制任何事情. 运行节点的计算机不需要与其他组件具有相同的操作系统. 例如, Windows节点可以具有将Internet Explorer作为浏览器选项的功能, 而在Linux或Mac上则无法实现</p>
+</div>
+</li>
+<li>
+<p>Session Map</p>
+<div class="paragraph">
+<p>会话表是一种数据存储的方式, 用于保存会话id和会话运行的节点的信息. 它作为路由支持, 在向节点转发请求的过程中起作用. 路由将通过会话表获取与会话id关联的节点.</p>
+</div>
+</li>
+<li>
+<p>New Session Queue</p>
+<div class="paragraph">
+<p>新会话队列以先进先出的顺序保存所有新会话请求. 其具有用于设置请求超时和请求重试间隔的可配置参数.</p>
+</div>
+<div class="paragraph">
+<p>路由将新会话请求添加到新会话队列并等待响应. 新会话队列定期检查队列中的任何请求是否已超时, 若有，则请求将被拒绝并立即删除.</p>
+</div>
+<div class="paragraph">
+<p>分发器定期检查是否有可用槽. 若有, 分发器将为第一个匹配的请求索取新会话队列. 然后分发器会尝试创建新的会话.</p>
+</div>
+<div class="paragraph">
+<p>一旦请求的功能与任何空闲节点槽匹配, 分发器将尝试获取可用槽. 如果没有空闲槽, 分发器会要求队列将请求添加到队列前面. 如果请求在重试或添加到队列头时超时, 则该请求将被拒绝.</p>
+</div>
+<div class="paragraph">
+<p>成功创建会话后, 分发器将会话信息发送到新会话队列. 新会话队列将响应发送回客户端</p>
+</div>
+</li>
+<li>
+<p>Event Bus</p>
+<div class="paragraph">
+<p>事件总线充当节点、分发服务器、新的会话队列器和会话表之间的通信路径. 网格通过消息进行大部分内部通信, 避免了昂贵的HTTP调用. 当以完全分布式模式启动网格时, 事件总线是应该启动的第一个组件</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="grid运行">Grid运行</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>独立运行</p>
+<div class="paragraph">
+<p>独立运行是指一个服务包含了所有的Grid组件</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar standalone</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>独立也是启动 Selenium Grid 的最简单模式。默认情况下，服务器将侦听http://localhost:4444，这是您应该指向RemoteWebDriver测试的 URL 。服务器将从系统中检测它可以使用的可用驱动程序PATH。</p>
+</div>
+</li>
+<li>
+<p>hub和nodes方式</p>
+<div class="paragraph">
+<p>hub是以下组件的集合：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Router</p>
+</li>
+<li>
+<p>Distributor</p>
+</li>
+<li>
+<p>Session Map</p>
+</li>
+<li>
+<p>New Session Queue</p>
+</li>
+<li>
+<p>Event Bus</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar hub</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>默认情况下，服务器将侦听http://localhost:4444，这是您应该指向RemoteWebDriver测试的 URL 。</p>
+</div>
+<div class="paragraph">
+<p>在此设置中可以启动一个或多个节点，服务器将从系统中检测它可以使用的可用驱动程序PATH。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar node</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>分布式部署</p>
+<div class="paragraph">
+<p>在分布式模式下，每个组件都需要自己启动。这种设置更适合大型Grid。</p>
+</div>
+<div class="paragraph">
+<p>组件的启动顺序并不重要，但是，我们建议在启动分布式网格时遵循这些步骤:</p>
+</div>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>事件总线：作为后续步骤中其他 Grid 组件的通信路径。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar  event-bus</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>会话映射：负责将会话 ID 映射到运行会话的节点。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar sessions</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>New Session Queue：将新的会话请求加入到队列中，由分发器处理。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar sessionqueue</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Distributor：节点向其注册，并为会话请求分配一个节点。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar
+distributor --sessions http://localhost:5556 --sessionqueue http://localhost:5559 --bind-bus false</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Router：Grid 入口点，负责将请求重定向到正确的组件。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar router --sessions http://localhost:5556 --distributor http://localhost:5553 --sessionqueue http://localhost:5559</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>节点</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">java -jar selenium-server-&lt;version&gt;.jar node</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>检查Grid状态</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>可以通过打开首选浏览器并转到http://localhost:4444来访问网格 UI 。</p>
+</li>
+<li>
+<p>API 调用可以通过http://localhost:4444/status 端点或使用 GraphQL 完成：</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sh hljs" data-lang="sh">curl -X POST -H "Content-Type: application/json" --data '{ "query": "{grid{uri}}" }' -s http://localhost:4444/graphql | jq .</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Selenium_pagefactory源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html">Junit+mockito+powermock单元测试初探
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/training/2021/03/01/%E5%86%92%E6%B3%A1%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E5%8F%8A%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95.html">冒泡排序算法及优化算法</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/guide/2021/05/15/app%E6%B5%8B%E8%AF%95%E6%B5%81%E7%A8%8B%E5%92%8C%E6%B5%8B%E8%AF%95%E7%82%B9.html">App测试流程和测试点</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

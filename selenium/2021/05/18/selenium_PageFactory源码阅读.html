@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Selenium_pagefactory源码阅读</title>
+    <meta name="description" content="selenium 做UI自动化会用到 PO 模式，PageFactory 则是为了支持 POM 而开发出来的,它提供初始化页面元素的方法。">
+    <meta name="keywords" content="selenium源码阅读,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>Selenium_pagefactory源码阅读</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2021-05-18
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#selenium" title="Category: selenium" rel="category">selenium</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#selenium" title="Tag: selenium" rel="tag">selenium</a-->
+        <a href="/tag/#selenium" title="Tag: selenium" rel="tag" style="color: blue;">selenium</a>&nbsp;
+    
+        <!--a href="/tag/#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB" title="Tag: 源码阅读" rel="tag">源码阅读</a-->
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>selenium</code> 做UI自动化会用到 <code>PO</code> 模式，<code>PageFactory</code> 则是为了支持 <code>POM</code> 而开发出来的,它提供初始化页面元素的方法。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="po设计模式">PO设计模式</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>PO（page object）设计模式是在自动化中已经流行起来的一种易于维护和减少代码的设计模式. 在自动化测试中, PO对象作为一个与页面交互的接口. 测试中需要与页面的UI进行交互时, 便调用PO的方法. 这样做的好处是, 如果页面的UI发生了更改,那么测试用例本身不需要更改, 只需更改PO中的代码即可.</p>
+</div>
+<div class="paragraph">
+<p>PO设计模式具有以下优点:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>测试代码与页面的定位代码（如定位器或者其他的映射）相分离.</p>
+</li>
+<li>
+<p>该页面提供的方法或元素在一个独立的类中, 而不是将这些方法或元素分散在整个测试中.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="pagefactory">PageFactory</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="pagefactory_使用简介">PageFactory 使用简介</h3>
+<div class="paragraph">
+<p>使用 <code>PageFactory</code> 会用到以下2个注解：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>@FindBy 定义元素定位方式</p>
+</li>
+<li>
+<p>@CacheLookup 缓存元素</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>先来看一个使用示例：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/**
+页面基类
+*/
+public abstract class BasePage {
+
+    WebDriver driver;
+
+    ...
+
+    BasePage(WebDriver driver){
+            this.driver = driver;
+            WebDriverWait wait = new WebDriverWait(driver,5,1);
+            if(!StringUtils.isEmpty(this.getWaitElementXpath())) {
+                if (WaitUntil.waitUntil(wait,this.getWaitElementXpath())) {
+                    PageFactory.initElements(driver, this);
+                } else {
+                    try {
+                        throw new Exception("页面初始化失败");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+  }
+
+/**
+首页
+*/
+  public class HomePage extends BasePage {
+
+      //用于显示等待判断页面元素加载，页面加载完成后进行PageFactory初始化
+      @Override
+      public String getWaitElementXpath() {
+          return "//iframe[@src='/assets/home.html']";
+      }
+
+      //url
+      private String url = "/home";
+
+      //元素
+      //首页iframe元素
+      @CacheLookup
+      @FindBy(xpath = "//iframe[@src='/assets/home.html']")
+      private WebElement iframe;
+
+      //逻辑代码
+      public Boolean isIframeDisplay(){
+          return iframe.isDisplayed();
+      };
+
+      //PageFactory初始化
+      public HomePage(WebDriver driver){
+          super(driver);
+      }
+
+  }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>上面示例中 <code>HomePage</code> 类 new 一个实例时，<code>WaitUntil</code> 工具类显示等待xpath定位元素，元素加载成功则进行<br>
+<code>PageFactory</code> 初始化，初始化后会根据 <code>@FindBy</code> 定位 <code>iframe</code> 元素并赋值，并且将WebElement进行缓存（缓存的是页面元素的引用，如果页面元素发生的变化导致定位方式找不到元素了，元素操作时会报错找不到对应元素），<br>
+此时调用实例的 <code>isIframeDisplay()</code> 方法将返回 true，并且在多次调用时 <code>iframe</code> 元素将从缓存中进行读取，不会多次 <code>driver.findBy</code>,<br>
+如果没有加 <code>@CacheLookup</code> 注解，则每次调用都会重新 <code>driver.findBy</code>。</p>
+</div>
+<div class="paragraph">
+<p>使用的方法基本上如上所述，那么具体的实现原理是什么呢？下面来阅读一下源码。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="pagefactory_源码阅读">PageFactory 源码阅读</h3>
+<div class="paragraph">
+<p>从初始化page作为阅读入口：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public static void initElements(WebDriver driver, Object page) {
+  final WebDriver driverRef = driver;
+  initElements(new DefaultElementLocatorFactory(driverRef), page);
+}
+
+public static void initElements(ElementLocatorFactory factory, Object page) {
+  final ElementLocatorFactory factoryRef = factory;
+  initElements(new DefaultFieldDecorator(factoryRef), page);
+}
+
+public static void initElements(FieldDecorator decorator, Object page) {
+  Class&lt;?&gt; proxyIn = page.getClass();
+  while (proxyIn != Object.class) {
+    proxyFields(decorator, page, proxyIn);
+    proxyIn = proxyIn.getSuperclass();
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>依次看一下三个initElements重载方法传参都分别做了什么，先来看 <code>DefaultElementLocatorFactory</code>,它主要就是实现了 <code>ElementLocatorFactory</code> 接口，大概的意思就是每次调用都返回新的 <code>ElementLocator</code>。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/**
+ * A factory for producing {@link ElementLocator}s. It is expected that a new ElementLocator will be
+ * returned per call.
+ */
+public interface ElementLocatorFactory {
+  /**
+   * When a field on a class needs to be decorated with an {@link ElementLocator} this method will
+   * be called.
+   *
+   * @param field the field
+   * @return An ElementLocator object.
+   */
+  ElementLocator createLocator(Field field);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>接着看 <code>DefaultFieldDecorator</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/**
+ * Default decorator for use with PageFactory. Will decorate 1) all of the WebElement fields and 2)
+ * List&amp;lt;WebElement&amp;gt; fields that have {@literal @FindBy}, {@literal @FindBys}, or
+ * {@literal @FindAll} annotation with a proxy that locates the elements using the passed in
+ * ElementLocatorFactory.
+ */
+public class DefaultFieldDecorator implements FieldDecorator {
+
+  protected ElementLocatorFactory factory;
+
+  public DefaultFieldDecorator(ElementLocatorFactory factory) {
+    this.factory = factory;
+  }
+
+  public Object decorate(ClassLoader loader, Field field) {
+    //不是WebElement类型的属性或者List&lt;WebElemtnt&gt;的则返回null
+    if (!(WebElement.class.isAssignableFrom(field.getType())
+          || isDecoratableList(field))) {
+      return null;
+    }
+
+    ElementLocator locator = factory.createLocator(field);
+    if (locator == null) {
+      return null;
+    }
+
+    if (WebElement.class.isAssignableFrom(field.getType())) {
+
+      return proxyForLocator(loader, locator);
+    } else if (List.class.isAssignableFrom(field.getType())) {
+      return proxyForListLocator(loader, locator);
+    } else {
+      return null;
+    }
+  }
+
+  //主要是针对List&lt;WebElemtnt&gt;进行的判断
+  protected boolean isDecoratableList(Field field) {
+    if (!List.class.isAssignableFrom(field.getType())) {
+      return false;
+    }
+
+    // Type erasure in Java isn't complete. Attempt to discover the generic
+    // type of the list.
+    Type genericType = field.getGenericType();
+    if (!(genericType instanceof ParameterizedType)) {
+      return false;
+    }
+
+    Type listType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+
+    if (!WebElement.class.equals(listType)) {
+      return false;
+    }
+
+    if (field.getAnnotation(FindBy.class) == null &amp;&amp;
+        field.getAnnotation(FindBys.class) == null &amp;&amp;
+        field.getAnnotation(FindAll.class) == null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  //WebElement动态代理
+  protected WebElement proxyForLocator(ClassLoader loader, ElementLocator locator) {
+    InvocationHandler handler = new LocatingElementHandler(locator);
+
+    WebElement proxy;
+    proxy = (WebElement) Proxy.newProxyInstance(
+        loader, new Class[]{WebElement.class, WrapsElement.class, Locatable.class}, handler);
+    return proxy;
+  }
+
+  //List&lt;WebElemtnt&gt;动态代理
+  @SuppressWarnings("unchecked")
+  protected List&lt;WebElement&gt; proxyForListLocator(ClassLoader loader, ElementLocator locator) {
+    InvocationHandler handler = new LocatingElementListHandler(locator);
+    List&lt;WebElement&gt; proxy;
+    proxy = (List&lt;WebElement&gt;) Proxy.newProxyInstance(
+        loader, new Class[]{List.class}, handler);
+    return proxy;
+  }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>看一下代理实现</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class LocatingElementHandler implements InvocationHandler {
+  private final ElementLocator locator;
+
+  public LocatingElementHandler(ElementLocator locator) {
+    this.locator = locator;
+  }
+
+  public Object invoke(Object object, Method method, Object[] objects) throws Throwable {
+    WebElement element;
+    try {
+      //实际就是调用了driver.findElement(by)
+      element = locator.findElement();
+    } catch (NoSuchElementException e) {
+      if ("toString".equals(method.getName())) {
+        return "Proxy element for: " + locator.toString();
+      }
+      throw e;
+    }
+
+    if ("getWrappedElement".equals(method.getName())) {
+      return element;
+    }
+
+    try {
+      return method.invoke(element, objects);
+    } catch (InvocationTargetException e) {
+      // Unwrap the underlying exception
+      throw e.getCause();
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>DefaultElementLocator</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public WebElement findElement() {
+  //缓存中有则读缓存
+  if (cachedElement != null &amp;&amp; shouldCache()) {
+    return cachedElement;
+  }
+  //driver.findElement(by)
+  WebElement element = searchContext.findElement(by);
+  //如果有@CacheLookup注解则进行缓存
+  if (shouldCache()) {
+    cachedElement = element;
+  }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>最后再看一下 <code>proxyFields</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static void proxyFields(FieldDecorator decorator, Object page, Class&lt;?&gt; proxyIn) {
+  //反射获得所有的属性
+  Field[] fields = proxyIn.getDeclaredFields();
+  //遍历属性
+  for (Field field : fields) {
+    //调用装饰器对属性进行装饰，即上面看到的DefaultFieldDecorator
+    Object value = decorator.decorate(page.getClass().getClassLoader(), field);
+    if (value != null) {
+      try {
+        //设置反射的属性可以访问
+        field.setAccessible(true);
+        //属性设置装饰后的新值
+        field.set(page, value);
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>好了，到此为止 <code>PageFactory</code> 的原理基本上清晰了，还有一个 <code>@FindBy</code> 传值定位元素方式的源代码比较直白易懂，而且由于本人接触的项目都是属于平台类型的，基本不会使用到 <code>id</code> <code>name</code> 这些方式，所以本文中就暂不赘述了，感兴趣的同学自己打开源码看一看吧。</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>@CacheLookup 最好谨慎使用，一般是确定且已成功加载的元素才使用进行缓存；如果元素加载缓慢一般我们会使用显示等待的方式，如果超时了会抛出异常，如果缓存了则会等到具体操作元素时才会抛出异常</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">Junit源码阅读_springrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">Selenium使用指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/guide/2021/05/15/app%E6%B5%8B%E8%AF%95%E6%B5%81%E7%A8%8B%E5%92%8C%E6%B5%8B%E8%AF%95%E7%82%B9.html">App测试流程和测试点</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

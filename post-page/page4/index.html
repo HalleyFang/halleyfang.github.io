@@ -13,7 +13,7 @@
     <link rel="icon" href="/favicon.ico?" type="image/x-icon">
     <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
-    <link rel="canonical" href="/">
+    <link rel="canonical" href="/post-page/page4/">
     <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/font-awesome.css">
@@ -188,8 +188,8 @@
       <ul class="nav navbar-nav">
         <li>
             
-            <a class="active" href="/">
-                
+            <a href="/">
+            
                 <i class="fa fa-home"></i>Home
             </a>
         </li>
@@ -261,6 +261,8 @@
         
             
         
+            
+        
       </ul>
     </div>
   </div>
@@ -295,212 +297,11 @@
           
               <li>
                 <h2>
-                  <a class="post-link" href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">Junit源码阅读_springrunner</a>
+                  <a class="post-link" href="/guide/2020/01/01/%E7%89%88%E6%9C%AC%E6%B5%81%E7%A8%8B%E4%B8%8E%E8%A7%84%E8%8C%83.html">版本流程与规范</a>
                 </h2>
                 <div class="label" style="line-height: 30px;">
                     <div class="label-card" style="color: #333;">
-                        <i class="fa fa-calendar"></i>2021-07-27
-                    </div>
-                    <div class="label-card" style="color: rebeccapurple;">
-                        <i class="fa fa-user"></i>halley.fang
-                        
-                    </div>
-                    <div class="label-card">
-                        
-                    </div>
-
-                    <div class="label-card">
-                    
-
-
-<!-- <span class="point">•</span> -->
-<span class="categories">
-  <i class="fa fa-th-list"></i>
-  
-    
-        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
-    
-  
-
-  <!-- <span class="point">•</span> -->
-</span>
-
-
-                    </div>
-
-                    <div class="label-card">
-                    
-<!-- <span class="point">•</span> -->
-<span class="pageTag">
-  <i class="fa fa-tags"></i>
-  
-    
-        <a href="/tag/#SpringBootTest" title="Tag: SpringBootTest" rel="tag" style="color: blue;">SpringBootTest</a>&nbsp;
-    
-        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
-    
-  
-
-</span>
-
-                    </div>
-                </div>
-                <div class="excerpt">
-                    <div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p><code>SpringRunner</code> 继承 <code>SpringJUnit4ClassRunner</code>，<code>SpringJUnit4ClassRunner</code> 继承 <code>BlockJUnit4ClassRunner</code>，本文中将阅读 <code>SpringJUnit4ClassRunner</code> 的源码</p>
-</div>
-</div>
-</div>
-                </div>
-                <div class="read-all">
-                    <a  href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html"><i class="fa fa-newspaper-o"></i>Read All</a>
-                </div>
-                <hr>
-              </li>
-              
-              <li>
-                <h2>
-                  <a class="post-link" href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner</a>
-                </h2>
-                <div class="label" style="line-height: 30px;">
-                    <div class="label-card" style="color: #333;">
-                        <i class="fa fa-calendar"></i>2021-07-15
-                    </div>
-                    <div class="label-card" style="color: rebeccapurple;">
-                        <i class="fa fa-user"></i>halley.fang
-                        
-                    </div>
-                    <div class="label-card">
-                        
-                    </div>
-
-                    <div class="label-card">
-                    
-
-
-<!-- <span class="point">•</span> -->
-<span class="categories">
-  <i class="fa fa-th-list"></i>
-  
-    
-        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
-    
-  
-
-  <!-- <span class="point">•</span> -->
-</span>
-
-
-                    </div>
-
-                    <div class="label-card">
-                    
-<!-- <span class="point">•</span> -->
-<span class="pageTag">
-  <i class="fa fa-tags"></i>
-  
-    
-        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
-    
-        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
-    
-  
-
-</span>
-
-                    </div>
-                </div>
-                <div class="excerpt">
-                    <div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p>junit4执行加载器默认为 <code>BlockJUnit4ClassRunner</code>，平时测试时我经常使用的是 <code>SpringRunner</code>、<code>MockitoJUnitRunner</code>、<code>PowerMockRunner</code> 等，具体使用方式为使用类注解@RunWith,本文中以默认加载器进行解读，其他几个常用 <code>runner</code> 后续进行单独解读。</p>
-</div>
-</div>
-</div>
-                </div>
-                <div class="read-all">
-                    <a  href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html"><i class="fa fa-newspaper-o"></i>Read All</a>
-                </div>
-                <hr>
-              </li>
-              
-              <li>
-                <h2>
-                  <a class="post-link" href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner</a>
-                </h2>
-                <div class="label" style="line-height: 30px;">
-                    <div class="label-card" style="color: #333;">
-                        <i class="fa fa-calendar"></i>2021-07-06
-                    </div>
-                    <div class="label-card" style="color: rebeccapurple;">
-                        <i class="fa fa-user"></i>halley.fang
-                        
-                    </div>
-                    <div class="label-card">
-                        
-                    </div>
-
-                    <div class="label-card">
-                    
-
-
-<!-- <span class="point">•</span> -->
-<span class="categories">
-  <i class="fa fa-th-list"></i>
-  
-    
-        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
-    
-  
-
-  <!-- <span class="point">•</span> -->
-</span>
-
-
-                    </div>
-
-                    <div class="label-card">
-                    
-<!-- <span class="point">•</span> -->
-<span class="pageTag">
-  <i class="fa fa-tags"></i>
-  
-    
-        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
-    
-        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
-    
-  
-
-</span>
-
-                    </div>
-                </div>
-                <div class="excerpt">
-                    <div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p>junit可以通过命令行进行执行，<code>java -ea junit.textui.TestRunner testclass</code> 这样的形式，本文主要就是阅读 <code>junit.textui.TestRunner</code> 的源码。</p>
-</div>
-</div>
-</div>
-                </div>
-                <div class="read-all">
-                    <a  href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html"><i class="fa fa-newspaper-o"></i>Read All</a>
-                </div>
-                <hr>
-              </li>
-              
-              <li>
-                <h2>
-                  <a class="post-link" href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">Junit用法</a>
-                </h2>
-                <div class="label" style="line-height: 30px;">
-                    <div class="label-card" style="color: #333;">
-                        <i class="fa fa-calendar"></i>2021-07-01
+                        <i class="fa fa-calendar"></i>2020-01-01
                     </div>
                     <div class="label-card" style="color: rebeccapurple;">
                         <i class="fa fa-user"></i>halley.fang
@@ -536,9 +337,7 @@
   <i class="fa fa-tags"></i>
   
     
-        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
-    
-        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+        <a href="/tag/#流程与规范" title="Tag: 流程与规范" rel="tag" style="color: blue;">流程与规范</a>
     
   
 
@@ -550,80 +349,13 @@
                     <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>junit使用，包含常用注解说明、<code>Assert</code>、<code>Suite</code>、<code>Ignore</code>、<code>Parameterized</code>、<code>rules</code>、自定义 <code>rule</code>、<code>Categories</code>、静态导入</p>
+<p>软件版本流程与规范</p>
 </div>
 </div>
 </div>
                 </div>
                 <div class="read-all">
-                    <a  href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html"><i class="fa fa-newspaper-o"></i>Read All</a>
-                </div>
-                <hr>
-              </li>
-              
-              <li>
-                <h2>
-                  <a class="post-link" href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读</a>
-                </h2>
-                <div class="label" style="line-height: 30px;">
-                    <div class="label-card" style="color: #333;">
-                        <i class="fa fa-calendar"></i>2021-06-27
-                    </div>
-                    <div class="label-card" style="color: rebeccapurple;">
-                        <i class="fa fa-user"></i>halley.fang
-                        
-                    </div>
-                    <div class="label-card">
-                        
-                    </div>
-
-                    <div class="label-card">
-                    
-
-
-<!-- <span class="point">•</span> -->
-<span class="categories">
-  <i class="fa fa-th-list"></i>
-  
-    
-        <a href="/category/#testng" title="Category: testng" rel="category">testng</a>
-    
-  
-
-  <!-- <span class="point">•</span> -->
-</span>
-
-
-                    </div>
-
-                    <div class="label-card">
-                    
-<!-- <span class="point">•</span> -->
-<span class="pageTag">
-  <i class="fa fa-tags"></i>
-  
-    
-        <a href="/tag/#testng" title="Tag: testng" rel="tag" style="color: blue;">testng</a>&nbsp;
-    
-        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
-    
-  
-
-</span>
-
-                    </div>
-                </div>
-                <div class="excerpt">
-                    <div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p>TestNG是一个测试框架，旨在简化广泛的测试需求，从单元测试(在其他类中隔离测试一个类)到集成测试(测试由几个类、几个包甚至几个外部框架组成的整个系统，如应用程序服务器)。</p>
-</div>
-</div>
-</div>
-                </div>
-                <div class="read-all">
-                    <a  href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html"><i class="fa fa-newspaper-o"></i>Read All</a>
+                    <a  href="/guide/2020/01/01/%E7%89%88%E6%9C%AC%E6%B5%81%E7%A8%8B%E4%B8%8E%E8%A7%84%E8%8C%83.html"><i class="fa fa-newspaper-o"></i>Read All</a>
                 </div>
                 <hr>
               </li>
@@ -633,13 +365,13 @@
         <!-- Pagination links -->
         <div class="pagination">
           
-            <span class="previous disable"><i class="fa fa-angle-double-left"></i></span>
-            <span class="previous disable"><i class="fa fa-angle-left"></i></span>
+            <a href="/index.html" class="previous"><i class="fa fa-angle-double-left"></i></a>
+            <a href="/post-page/page3" class="previous"><i class="fa fa-angle-left"></i></a>
           
-          <span class="page_number ">1/4</span>
+          <span class="page_number ">4/4</span>
           
-            <a href="/post-page/page2" class="next"><i class="fa fa-angle-right"></i></a>
-            <a href="/page4" class="next"><i class="fa fa-angle-double-right"></i></a>
+            <span class="next disable"><i class="fa fa-angle-right"></i></span>
+            <span class="next disable"><i class="fa fa-angle-double-right"></i></span>
           
         </div>
     </div>

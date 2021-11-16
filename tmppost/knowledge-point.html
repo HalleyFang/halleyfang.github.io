@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>halley.fang 个人博客</title>
+    <meta name="description" content="halley.fang 个人博客">
+    <meta name="keywords" content=" ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/tmppost/knowledge-point.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1></h1>
+        <hr>
+        <h1>知识点</h1>
+<div class="sect1">
+<h2 id="面向对象三大特性">面向对象三大特性</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>继承：一般类只能单继承，内部类实现多继承，接口可以多继承</p>
+</li>
+<li>
+<p>封装：访问权限控制public &gt; protected &gt; 包 &gt; private 内部类也是一种封装</p>
+</li>
+<li>
+<p>多态：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>编译时多态，体现在向上转型和向下转型，通过引用类型判断调用哪个方法（静态分派）。</p>
+</li>
+<li>
+<p>运行时多态，体现在同名函数通过不同参数实现多种方法（动态分派）。</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="基本数据类型">基本数据类型</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>基本类型位数，自动装箱，常量池。</p>
+</li>
+<li>
+<p>例如byte类型是1byte也就是8位，可以表示的数字是-128到127，因为还有一个0，加起来一共是256，也就是2的八次方。</p>
+<div class="paragraph">
+<p>32位和64位机器的int是4个字节也就是32位，char是1个字节就是8位，float是4个字节，double是8个字节，long是8个字节。</p>
+</div>
+</li>
+<li>
+<p>基本数据类型的包装类只在数字范围-128到127中用到常量池，会自动拆箱装箱，其余数字范围的包装类则会新建实例。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="string及包装类">String及包装类</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>final修饰基本数据类型保证不可变</p>
+</li>
+<li>
+<p>final修饰引用保证引用不能指向别的对象，否则会报错。</p>
+</li>
+<li>
+<p>final修饰类，类的实例分配空间后地址不可变，子类不能重写所有父类方法。因此在cglib动态代理中，不能为一个类的final修饰的函数做代理，因为cglib要将被代理的类设置为父类，然后再生成字节码。</p>
+</li>
+<li>
+<p>final修饰方法，子类不能重写该方法。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="抽象类和接口">抽象类和接口</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>抽象类可以有方法实现。 抽象类可以有非final成员变量。 抽象方法要用abstract修饰。 抽象类可以有构造方法，但是只能由子类进行实例化。</p>
+</li>
+<li>
+<p>接口可以用extends加多个接口实现多继承。 接口只能有public final类型的成员变量。 接口只能有抽象方法，不能有方法体、 接口不能实例化，但是可以作为引用类型。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="代码块和加载顺序">代码块和加载顺序</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>假设该类是第一次进行实例化。那么有如下加载顺序 静态总是比非静态优先，从早到晚的顺序是： 1. 静态代码块 和 静态成员变量的顺序根据代码位置前后来决定。 2. 代码块和成员变量的顺序也根据代码位置来决定 3. 最后才调用构造方法构造方法</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="包内部类外部类">包、内部类、外部类</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Java项目一般从src目录开始有com&#8230;&#8203;A.java这样的目录结构。这就是包结构。所以一般编译后的结构是跟包结构一模一样的，这样的结构保证了import时能找到正确的class引用包访问权限就是指同包下的类可见。</p>
+<div class="paragraph">
+<p>import 一般加上全路径，并且使用.*时只包含当前目录的所有类文件，不包括子目录。</p>
+</div>
+</li>
+<li>
+<p>外部类只有public和default两种修饰，要么全局可访问，要么包内可访问。</p>
+</li>
+<li>
+<p>内部类可以有全部访问权限，因为它的概念就是一个成员变量，所以访问权限设置与一般的成员变量相同。</p>
+<div class="paragraph">
+<p>非静态内部类是外部类的一个成员变量，只跟外部类的实例有关。</p>
+</div>
+<div class="paragraph">
+<p>静态内部类是独立于外部类存在的一个类，与外部类实例无关，可以通过外部类.内部类直接获取Class类型。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="异常">异常</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>异常体系的最上层是Throwable类 子类有Error和Exception Exception的子类又有RuntimeException和其他具体的可检查异常。</p>
+</li>
+<li>
+<p>Error是jvm完全无法处理的系统错误，只能终止运行。</p>
+<div class="paragraph">
+<p>运行时异常指的是编译正确但运行错误的异常，如数组越界异常，一般是人为失误导致的，这种异常不用try catch，而是需要程序员自己检查。</p>
+</div>
+<div class="paragraph">
+<p>可检查异常一般是jvm处理不了的一些异常，但是又经常会发生，比如Ioexception，Sqlexception等，是外部实现带来的异常。</p>
+</div>
+</li>
+<li>
+<p>多线程的异常流程是独立的，互不影响。 大型模块的子模块异常一般需要重新封装成外部异常再次抛出，否则只能看到最外层异常信息，难以进行调试。</p>
+<div class="paragraph">
+<p>日志框架是异常报告的最好帮手，log4j，slf4j中，在工作中必不可少。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="泛型">泛型</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Java中的泛型是伪泛型，只在编译期生效，运行期自动进行泛型擦除，将泛型替换为实际上传入的类型。</p>
+<div class="paragraph">
+<p>泛型类用</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">classA {
+
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>这样的形式表示，里面的方法和成员变量都可以用T来表示类型。泛型接口也是类似的，不过泛型类实现泛型接口时可以选择注入实际类型或者是继续使用泛型。</p>
+</li>
+<li>
+<p>泛型方法可以自带泛型比如void &lt;E&gt; go();</p>
+<div class="paragraph">
+<p>泛型可以使用?通配符进行泛化 Object可以接受任何类型</p>
+</div>
+<div class="paragraph">
+<p>也可以使用 这种方式进行上下边界的限制。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="class类和object类">Class类和Object类</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Java反射的基础是Class类，该类封装所有其他类的类型信息，并且在每个类加载后在堆区生成每个类的一个Class&lt;类名&gt;实例，用于该类的实例化。</p>
+</li>
+<li>
+<p>Java中可以通过多种方式获取Class类型，比如A.class,new A().getClass()方法以及Class.forName("com.?.?.A")方法。</p>
+</li>
+<li>
+<p>Object是所有类的父类，有着自己的一些私有方法，以及被所有类继承的9大方法。</p>
+<div class="paragraph">
+<p>知乎上有人讨论Object和Class类型谁先加载谁后加载，因为每个类都要继承Object，但是又得先被加载到堆区，事实上，这个问题在JVM初始化时就解决了，没必要多想。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="javac和java">javac和java</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>javac 是编译一个java文件的基本命令，通过不同参数可以完成各种配置，比如导入其他类，指定编译路径等。</p>
+</li>
+<li>
+<p>java是执行一个java文件的基本命令，通过参数配置可以以不同方式执行一个java程序或者是一个jar包。</p>
+</li>
+<li>
+<p>javap是一个class文件的反编译程序，可以获取class文件的反编译结果，甚至是jvm执行程序的每一步代码实现。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="反射">反射</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Java反射包reflection提供对Class，Method，field，constructor1 等信息的封装类型。</p>
+</li>
+<li>
+<p>通过这些api可以轻易获得一个类的各种信息并且可以进行实例化，方法调用等。</p>
+<div class="paragraph">
+<p>类中的private参数可以通过setaccessible方法强制获取。</p>
+</div>
+</li>
+<li>
+<p>反射的作用可谓是博大精深，JDK动态代理生成代理类的字节码后，首先把这个类通过defineclass定义成一个类，然后用class.for(name)会把该类加载到jvm，之后我们就可以通过，A.class.GetMethod()获取其方法，然后通过invoke调用其方法，在调用这个方法时，实际上会通过被代理类的引用再去调用原方法。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="枚举类">枚举类</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>枚举类继承Enum并且每个枚举类的实例都是唯一的。</p>
+</li>
+<li>
+<p>枚举类可以用于封装一组常量，取值从这组常量中取，比如一周的七天，一年的十二个月。</p>
+</li>
+<li>
+<p>枚举类的底层实现其实是语法糖，每个实例可以被转化成内部类。并且使用静态代码块进行初始化，同时保证内部成员变量不可变。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="序列化">序列化</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>序列化的类要实现serializable接口</p>
+<div class="paragraph">
+<p>transient修饰符可以保证某个成员变量不被序列化</p>
+</div>
+<div class="paragraph">
+<p>readObject和writeOject来实现实例的写入和读取。</p>
+</div>
+</li>
+<li>
+<p>事实上，一些拥有数组变量的类都会把数组设为transient修饰，这样的话不会对整个数组进行序列化，而是利用专门的方法将有数据的数组范围进行序列化，以便节省空间。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="动态代理">动态代理</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>jdk自带的动态代理可以代理一个已经实现接口的类。</p>
+</li>
+<li>
+<p>cglib代理可以代理一个普通的类。</p>
+</li>
+<li>
+<p>动态代理的基本实现原理都是通过字节码框架动态生成字节码，并且在用defineclass加载类后，获取代理类的实例。</p>
+<div class="paragraph">
+<p>一般需要实现一个代理处理器，用来处理被代理类的前置操作和后置操作。在JDK动态代理中，这个类叫做invocationHandler。</p>
+</div>
+</li>
+<li>
+<p>JDK动态代理首先获取被代理类的方法，并且只获取在接口中声明的方法，生成代理类的字节码后，首先把这个类通过defineclass定义成一个类，然后把该类加载到jvm，之后我们就可以通过，A.class.GetMethod()获取其方法，然后通过invoke调用其方法，在调用这个方法时，实际上会通过被代理类的引用再去调用原方法。</p>
+</li>
+<li>
+<p>而对于cglib动态代理，一般会把被代理类设为代理类的父类，然后获取被代理类中所有非final的方法，通过asm字节码框架生成代理类的字节码，这个代理类很神奇，他会保留原来的方法以及代理后的方法，通过方法数组的形式保存。</p>
+<div class="paragraph">
+<p>cglib的动态代理需要实现一个enhancer和一个interceptor，在interceptor中配置我们需要的代理内容。如果没有配置interceptor，那么代理类会调用被代理类自己的方法，如果配置了interceptor，则会使用代理类修饰过的方法。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="多线程">多线程</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>这里先不讲juc包里的多线程类。juc相关内容会在Java并发专题讲解。</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>线程的实现可以通过继承Thread类和实现Runable接口 也可以使用线程池。callable配合future可以实现线程中的数据获取。</p>
+</li>
+<li>
+<p>Java中的线程有7种状态，new runable running blocked waiting timewaiting terminate</p>
+<div class="paragraph">
+<p>blocked是线程等待其他线程锁释放。 waiting是wait以后线程无限等待其他线程使用notify唤醒 timewating是有限时间地等待被唤醒，也可能是sleep固定时间。</p>
+</div>
+</li>
+<li>
+<p>Thread的join是实例方法，比如a.join(b),则说明a线程要等b线程运行完才会运行。</p>
+</li>
+<li>
+<p>o.wait方法会让持有该对象o的线程释放锁并且进入阻塞状态，notify则是持有o锁对象的线程通知其他等待锁的线程获取锁。notify方法并不会释放锁。注意这两个方法都只能在synchronized同步方法或同步块里使用。</p>
+</li>
+<li>
+<p>synchronized方法底层使用系统调用的mutex锁，开销较大，jvm会为每个锁对象维护一个等待队列，让等待该对象锁的线程在这个队列中等待。当线程获取不到锁时则让线程阻塞，而其他检查notify以后则会通知任意一个线程，所以这个锁时非公平锁。</p>
+</li>
+<li>
+<p>Thread.sleep()，Thread.interrupt()等方法都是类方法，表示当前调用该方法的线程的操作。</p>
+<div class="paragraph">
+<p>一个线程实例连续start两次会抛异常,这是因为线程start后会设置标识，如果再次start则判断为错误。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="io流">IO流</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>IO流也是Java中比较重要的一块，Java中主要有字节流，字符流，文件等。其中文件也是通过流的方式打开，读取和写入的。</p>
+</li>
+<li>
+<p>IO流的很多接口都使用了装饰者模式，即将原类型通过传入装饰类构造函数的方式，增强原类型，以此获得像带有缓冲区的字节流，或者将字节流封装成字符流等等，其中需要注意的是编码问题，后者打印出来的结果可能是乱码哦。</p>
+</li>
+<li>
+<p>IO流与网络编程息息相关，一个socket接入后，我们可以获取它的输入流和输出流，以获取TCP数据包的内容，并且可以往数据报里写入内容，因为TCP协议也是按照流的方式进行传输的，实际上TCP会将这些数据进行分包处理，并且通过差错检验，超时重传，滑动窗口协议等方式，保证了TCP数据包的高效和可靠传输。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="网络编程">网络编程</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>承接IO流的内容</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>IO流与网络编程息息相关，一个socket接入后，我们可以获取它的输入流和输出流，以获取TCP数据包的内容，并且可以往数据报里写入内容，因为TCP协议也是按照流的方式进行传输的，实际上TCP会将这些数据进行分包处理，并且通过差错检验，超时重传，滑动窗口协议等方式，保证了TCP数据包的高效和可靠传输。</p>
+</li>
+<li>
+<p>除了使用socket来获取TCP数据包外，还可以使用UDP的DatagramPacket来封装UDP数据包，因为UDP数据包的大小是确定的，所以不是使用流方式处理，而是需要事先定义他的长度，源端口和目标端口等信息。</p>
+</li>
+<li>
+<p>为了方便网络编程，Java提供了一系列类型来支持网络编程的api，比如URL类，InetAddress类等。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java8">Java8</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>接口中的默认方法，接口终于可以有方法实现了，使用注解即可标识出默认方法。</p>
+</li>
+<li>
+<p>lambda表达式实现了函数式编程，通过注解可以声明一个函数式接口，该接口中只能有一个方法，这个方法正是使用lambda表达式时会调用到的接口。</p>
+</li>
+<li>
+<p>Option类实现了非空检验</p>
+</li>
+<li>
+<p>各种api的更新，包括chm，hashmap的实现等</p>
+</li>
+<li>
+<p>Stream流概念，实现了集合类的流式访问，可以基于此使用map和reduce并行计算。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="jdbc过程">jdbc过程</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>首先，需要知道使用Java开发任何数据库应用程序都需要4个主要接口：Driver，Connection，Statement和ResultSet。这些接口定义了使用SQL访问数据库的一般架构。访问数据库的Java程序主要有5个步骤，分别是：</p>
+</div>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>加载驱动程序。</p>
+</li>
+<li>
+<p>建立连接。</p>
+</li>
+<li>
+<p>创建语句。</p>
+</li>
+<li>
+<p>执行语句。</p>
+</li>
+<li>
+<p>处理ResultSet。</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>那么就简单说明这5个步骤如何实现：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>加载驱动程序</p>
+<div class="paragraph">
+<p>在连接到数据库之前，需要加载一个合适的驱动程序。</p>
+</div>
+<div class="paragraph">
+<p>Class.forname("com.mysql.cj.jdbc.Driver");</p>
+</div>
+<div class="paragraph">
+<p>驱动程序是一个实现接口java.sql.Driver的具体类。因为我用的数据库是MySQL，所以在括号里填com.mysql.cj.jdbc.Driver，像其他的数据库，会有不同的程序驱动类。</p>
+</div>
+</li>
+<li>
+<p>建立连接</p>
+<div class="paragraph">
+<p>连接到数据库需要使用到DriverManager类中的静态方法getConnection(databaseURL)，其中databaseURL是数据库在Internet上的唯一标识符。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Connection connection=DriverManager.getConnection("jdbc:mysql://localhost/Contacts?serverTimezone=UTC", "root", "Cc229654512");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>创建语句</p>
+<div class="paragraph">
+<p>Statement的对象可以为数据库传输SQL语句用于执行，并把运行结果返回程序。一旦创建Connection对象，就可以创建执行SQL语句的语句。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Statement statement=connection.createStatement();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>执行语句</p>
+<div class="paragraph">
+<p>可以使用方法executeUpdate(String sql)来执行数据定义语言或者更新语句，可以使用executeQuery(String sql)来执行SQL查询语句。结果在ResultSet中返回。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">ResultSet resultSet=statement.executeQuery("select Name, PhoneNumber, Email, QQ, Note from Contacts");</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>处理ResultSet</p>
+<div class="paragraph">
+<p>结果集ResultSet可以获得表的当前行，可以使用next方法移动行，可以使用各种get方法获取当前行的值。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">while(resultSet.next())
+
+{
+        System.out.println(resultSet.getString(1)+"\t"+resultSet.getString(2)+"\t"+resultSet.getString(3));
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="socket原理">socket原理</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Socket是什么呢？</p>
+</div>
+<div class="paragraph">
+<p>       Socket是应用层与TCP/IP协议族（运输层）通信的中间软件抽象层，它是一组接口。在设计模式中，Socket其实就是一个门面模式，它把复杂的TCP/IP协议族隐藏在Socket接口后面，对用户来说，一组简单的接口就是全部，让Socket去组织数据，以符合指定的协议。是“open—write/read—close”模式的一种实现</p>
+</div>
+<div class="paragraph">
+<p>过程：</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/tmp/socket.png" alt="过程">
+</div>
+<div class="title">Figure 1. 过程</div>
+</div>
+<div class="paragraph">
+<p>先从服务器端说起。服务器端先初始化Socket，然后与端口绑定(bind)，对端口进行监听(listen)，调用accept阻塞，等待客户端连接。在这时如果有个客户端初始化一个Socket，然后连接服务器(connect)，如果连接成功，这时客户端与服务器端的连接就建立了。客户端发送数据请求，服务器端接收请求并处理请求，然后把回应数据发送给客户端，客户端读取数据，最后关闭连接，一次交互结束。</p>
+</div>
+<div class="paragraph">
+<p> </p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java调用对象的几种方法">java调用对象的几种方法</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>用new语句创建对象，这是最常见的创建对象的方法。</p>
+</li>
+<li>
+<p>还有就是这种，通过工厂方法返回对象</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">String emp0 = String.valueOf(23); 
+
+String emp1 = "123";</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>运用反射手段,调用java.lang.Class或者java.lang.reflect.Constructor类的newInstance()实例方法。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">CreateInstance instance = (CreateInstance)Class.forname("com.create.instance.CreateInstance").newInstance();
+
+Employee emp2 = Employee.class.newInstance()</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>运用反序列化手段，调用java.io.ObjectInputStream对象的 readObject()方法。</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">objectInputStream in = new ObjectInputStream(new FileInputStream("data.obj"));
+Employee emp4 = (Employee) in.readObject();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>clone()克隆方法。 </p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Employee emp5 = (Employee) emp3.clone();</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="hashcode的实现机制">hashcode的实现机制</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>为什么使用 hashcode</p>
+<div class="paragraph">
+<p>hashCode 存在的第一重要的原因就是在 HashMap中使用,HashMap 之所以速度快，因为他使用的是散列表，根据 key 的 hashcode 值生成数组下标（通过内存地址直接查找，没有任何判断），时间复杂度完美情况下可以达到 n1（和数组相同，但是比数组用着爽多了，但是需要多出很多内存，相当于以空间换时间）。</p>
+</div>
+</li>
+<li>
+<p>重写hashcode</p>
+<div class="paragraph">
+<p>使用 String 的 char 数组的数字每次乘以 31 再叠加最后返回，因此，每个不同的字符串，返回的 hashCode 肯定不一样。</p>
+</div>
+</li>
+<li>
+<p>为什么乘以31</p>
+<div class="paragraph">
+<p>之所以使用 31， 是因为他是一个奇素数。如果乘数是偶数，并且乘法溢出的话，信息就会丢失，因为与2相乘等价于移位运算（低位补0）。使用素数的好处并不很明显，但是习惯上使用素数来计算散列结果。 31 有个很好的性能，即用移位和减法来代替乘法，可以得到更好的性能： 31 * i == (i &lt;&lt; 5） - i， 现代的 VM 可以自动完成这种优化。这个公式可以很简单的推导出来。</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p> </p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="接口的分类">接口的分类</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>单方法接口<br>
+以下是引用片段：<br>
+[2]　public interface Actionlistener{<br>
+public abstract void actionPerformed(ActionEvent event);<br>
+}<br>
+仅且只有一个方法，只有实现了这个接口(重写这个接口中的唯一一个方法)，你才有资格去事件监听器列表里注册(参数为Actionlistener类型)，当事件源变动时，自动调用这个唯一的actionPerformed方法。</p>
+</li>
+<li>
+<p>标识接口<br>
+是没有任何方法和属性的接口。标识接口不对实现它的类有任何语意上的要求，它仅仅表明了实现它的类属于一个特定的类型(传递)。<br>
+不推荐过多的使用标识接口。</p>
+</li>
+<li>
+<p>常量接口<br>
+用Java接口来声明一些常量，然后由实现这个接口的类使用这些常量(以前在做画板的时候这么干过)。建议不要模仿这种常量接口的做法。</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java虚拟机">Java虚拟机</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="jvm">Java虚拟机</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="java内存泄漏的原因及分析">java内存泄漏的原因及分析</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>定义：内存泄漏是指无用对象（不再使用的对象）持续占有内存或无用对象的内存得不到及时释放，从而造成内存空间的浪费称为内存泄漏。</p>
+</div>
+<div class="paragraph">
+<p>会发生的场景：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>静态集合类引起内存泄露：</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>像HashMap、Vector等的使用最容易出现内存泄露，这些静态变量的生命周期和应用程序一致，他们所引用的所有的对象Object也不能被释放，因为他们也将一直被Vector等引用着。</p>
+</div>
+<div class="sect4">
+<h5 id="例">例:</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Static Vector v = new Vector(10);
+
+for (int i = 1; i&lt;100; i++){
+
+Object o = new Object();
+
+v.add(o);
+
+o = null;}//</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在这个例子中，循环申请Object 对象，并将所申请的对象放入一个Vector 中，如果仅仅释放引用本身（o=null），那么Vector 仍然引用该对象，所以这个对象对GC 来说是不可回收的。因此，如果对象加入到Vector 后，还必须从Vector 中删除，最简单的方法就是将Vector对象设置为null。</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>当集合里面的对象属性被修改后，再调用remove（）方法时不起作用。</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect4">
+<h5 id="例_2">例：</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public static void main(String[] args){
+
+Set&lt;Person&gt; set = new HashSet&lt;Person&gt;();
+
+Person p1 = new Person("唐僧","pwd1",25);
+
+Person p2 = new Person("孙悟空","pwd2",26);
+
+Person p3 = new Person("猪八戒","pwd3",27);
+
+set.add(p1);
+
+set.add(p2);
+
+set.add(p3);
+
+System.out.println("总共有:"+set.size()+" 个元素!"); //结果：总共有:3 个元素!
+
+p3.setAge(2); //修改p3的年龄,此时p3元素对应的hashcode值发生改变
+
+set.remove(p3); //此时remove不掉，造成内存泄漏
+
+set.add(p3); //重新添加，居然添加成功
+
+System.out.println("总共有:"+set.size()+" 个元素!"); //结果：总共有:4 个元素!
+
+for (Person person : set){
+
+System.out.println(person);}}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>监听器</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>在java 编程中，我们都需要和监听器打交道，通常一个应用当中会用到很多监听器，我们会调用一个控件的诸如addXXXListener()等方法来增加监听器，但往往在释放对象的时候却没有记住去删除这些监听器，从而增加了内存泄漏的机会。</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>各种连接</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>比如数据库连接（dataSourse.getConnection()），网络连接(socket)和io连接，除非其显式的调用了其close（）方法将其连接关闭，否则是不会自动被GC 回收的。对于Resultset 和Statement 对象可以不进行显式回收，但Connection 一定要显式回收，因为Connection 在任何时候都无法自动回收，而Connection一旦回收，Resultset 和Statement 对象就会立即为NULL。但是如果使用连接池，情况就不一样了，除了要显式地关闭连接，还必须显式地关闭Resultset Statement 对象（关闭其中一个，另外一个也会关闭），否则就会造成大量的Statement 对象无法释放，从而引起内存泄漏。这种情况下一般都会在try里面去的连接，在finally里面释放连接。</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>内部类和外部模块等的引用</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>内部类的引用是比较容易遗忘的一种，而且一旦没释放可能导致一系列的后继类对象没有释放。此外程序员还要小心外部模块不经意的引用，例如程序员A 负责A 模块，调用了B 模块的一个方法如：</p>
+</div>
+<div class="paragraph">
+<p>+</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void registerMsg(Object b);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这种调用就要非常小心了，传入了一个对象，很可能模块B就保持了对该对象的引用，这时候就需要注意模块B 是否提供相应的操作去除引用。</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>单例模式</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>不正确使用单例模式是引起内存泄露的一个常见问题，单例对象在被初始化后将在JVM的整个生命周期中存在（以静态变量的方式），如果单例对象持有外部对象的引用，那么这个外部对象将不能被jvm正常回收，导致内存泄露，考虑下面的例子：</p>
+</div>
+<div class="paragraph">
+<p>+</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">class A{
+
+public A(){
+
+B.getInstance().setA(this);}....}
+
+//B类采用单例模式
+
+class B{
+
+private A a;
+
+private static B instance=new B();
+
+public B(){}
+
+public static B getInstance(){
+
+return instance;}
+
+public void setA(A a){
+
+this.a=a;}
+
+//getter...}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>显然B采用singleton模式，它持有一个A对象的引用，而这个A类的对象将不能被回收。想象下如果A是个比较复杂的对象或者集合类型会发生什么情况</p>
+</div>
+</div>
+</div>
+</div>
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+
+            <!-- Content -->
+            <div class="side content">
+                <div>
+                    Content
+                </div>
+                <ul id="content-side" class="content-ul">
+                </ul>
+            </div>
+            <!-- 其他div框放到这里 -->
+            <!-- <div class="side">bbbb</div> -->
+        </div>
+    </div>
+</div>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

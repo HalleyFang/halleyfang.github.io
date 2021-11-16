@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Junit源码阅读_springrunner</title>
+    <meta name="description" content="SpringRunner 继承 SpringJUnit4ClassRunner，SpringJUnit4ClassRunner 继承 BlockJUnit4ClassRunner，本文中将阅读 SpringJUnit4ClassRunner 的源码">
+    <meta name="keywords" content="SpringBootTest源码阅读,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>Junit源码阅读_springrunner</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2021-07-27
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#junit" title="Category: junit" rel="category">junit</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#SpringBootTest" title="Tag: SpringBootTest" rel="tag">SpringBootTest</a-->
+        <a href="/tag/#SpringBootTest" title="Tag: SpringBootTest" rel="tag" style="color: blue;">SpringBootTest</a>&nbsp;
+    
+        <!--a href="/tag/#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB" title="Tag: 源码阅读" rel="tag">源码阅读</a-->
+        <a href="/tag/#源码阅读" title="Tag: 源码阅读" rel="tag" style="color: blue;">源码阅读</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>SpringRunner</code> 继承 <code>SpringJUnit4ClassRunner</code>，<code>SpringJUnit4ClassRunner</code> 继承 <code>BlockJUnit4ClassRunner</code>，本文中将阅读 <code>SpringJUnit4ClassRunner</code> 的源码</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="springrunner_源码阅读">SpringRunner 源码阅读</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="继承blockjunit4classrunner">继承BlockJUnit4ClassRunner</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>继承BlockJUnit4ClassRunner</p>
+<div class="paragraph">
+<p><code>SpringRunner</code> 继承 <code>SpringJUnit4ClassRunner</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public final class SpringRunner extends SpringJUnit4ClassRunner {
+
+	/**
+	 * Construct a new {@code SpringRunner} and initialize a
+	 * {@link org.springframework.test.context.TestContextManager TestContextManager}
+	 * to provide Spring testing functionality to standard JUnit 4 tests.
+	 * @param clazz the test class to be run
+	 * @see #createTestContextManager(Class)
+	 */
+	public SpringRunner(Class&lt;?&gt; clazz) throws InitializationError {
+		super(clazz);
+	}
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>SpringJUnit4ClassRunner</code> 继承 <code>BlockJUnit4ClassRunner</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+...
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>BlockJUnit4ClassRunner</code> 源码阅读在前面博客已经讲述过，下面直接来看下 <code>SpringJUnit4ClassRunner</code> 重写了哪些方法：</p>
+</div>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>重写 getDescription</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+public Description getDescription() {
+  //当类上有@IfProfileValue注解时，代表指定了运行环境，isTestEnabledInThisEnvironment=false
+  if (!ProfileValueUtils.isTestEnabledInThisEnvironment(getTestClass().getJavaClass())) {
+    //返回Description，与父类区别是没有加入child
+    return Description.createSuiteDescription(getTestClass().getJavaClass());
+  }
+  //没有@IfProfileValue则使用父类方法
+  return super.getDescription();
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private static boolean isTestEnabledInThisEnvironment(ProfileValueSource profileValueSource,
+			@Nullable IfProfileValue ifProfileValue) {
+    //如果没有ifProfileValue则返回true
+		if (ifProfileValue == null) {
+			return true;
+		}
+    //实际调用了System.getProperty(key)获取配置信息
+		String environmentValue = profileValueSource.get(ifProfileValue.name());
+		String[] annotatedValues = ifProfileValue.values();
+		if (StringUtils.hasLength(ifProfileValue.value())) {
+			Assert.isTrue(annotatedValues.length == 0, () -&gt; "Setting both the 'value' and 'values' attributes " +
+						"of @IfProfileValue is not allowed: choose one or the other.");
+			annotatedValues = new String[] { ifProfileValue.value() };
+		}
+
+		for (String value : annotatedValues) {
+      //如果指定的value与获取的环境信息相等则返回true
+			if (ObjectUtils.nullSafeEquals(value, environmentValue)) {
+				return true;
+			}
+		}
+		return false;
+	}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这里对 <code>@IfProfileValue</code> 的理解比较模糊，于是去翻了一下 <a href="https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/test/annotation/IfProfileValue.html">javadoc-api</a>，原示例如下</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/**
+When using SystemProfileValueSource as the ProfileValueSource implementation (which is configured by default), you can configure a test method to run only on Java VMs from Oracle as follows:
+**/
+@IfProfileValue(name = "java.vendor", value = "Oracle Corporation")
+public void testSomething() {
+    // ...
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>就是说可以通过这个注解指定类或方法的运行环境，那么这个注解对于我只在本地跑单元测试来说相当 <code>@Ignore</code>，本文就不对 <code>@IfProfileValue</code> 进行详细探讨了，等后面需要了再研究一下。</p>
+</div>
+</li>
+<li>
+<p>重写run</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+public void run(RunNotifier notifier) {
+  //同上上文getDescription描述
+  if (!ProfileValueUtils.isTestEnabledInThisEnvironment(getTestClass().getJavaClass())) {
+    notifier.fireTestIgnored(getDescription());
+    return;
+  }
+  super.run(notifier);
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>重写withBeforeClasses</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+protected Statement withBeforeClasses(Statement statement) {
+  Statement junitBeforeClasses = super.withBeforeClasses(statement);
+  //这里的关键是getTestContextManager，将Statement带上TestContext
+  return new RunBeforeTestClassCallbacks(junitBeforeClasses, getTestContextManager());
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>通过 <code>getTestContextManager</code> 看一下 <code>SpringJUnit4ClassRunner</code> 增加了哪些方法</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">private final TestContextManager testContextManager;
+
+protected final TestContextManager getTestContextManager() {
+  return this.testContextManager;
+}
+
+public SpringJUnit4ClassRunner(Class&lt;?&gt; clazz) throws InitializationError {
+  super(clazz);
+  if (logger.isDebugEnabled()) {
+    logger.debug("SpringJUnit4ClassRunner constructor called with [" + clazz + "]");
+  }
+  ensureSpringRulesAreNotPresent(clazz);
+  this.testContextManager = createTestContextManager(clazz);
+}
+
+//判断不存在SpringRules
+private static void ensureSpringRulesAreNotPresent(Class&lt;?&gt; testClass) {
+		for (Field field : testClass.getFields()) {
+			Assert.state(!SpringClassRule.class.isAssignableFrom(field.getType()), () -&gt; String.format(
+					"Detected SpringClassRule field in test class [%s], " +
+					"but SpringClassRule cannot be used with the SpringJUnit4ClassRunner.", testClass.getName()));
+			Assert.state(!SpringMethodRule.class.isAssignableFrom(field.getType()), () -&gt; String.format(
+					"Detected SpringMethodRule field in test class [%s], " +
+					"but SpringMethodRule cannot be used with the SpringJUnit4ClassRunner.", testClass.getName()));
+		}
+	}
+
+//创建TestContextManager
+protected TestContextManager createTestContextManager(Class&lt;?&gt; clazz) {
+  return new TestContextManager(clazz);
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">  public TestContextManager(Class&lt;?&gt; testClass) {
+		this(BootstrapUtils.resolveTestContextBootstrapper(BootstrapUtils.createBootstrapContext(testClass)));
+	}
+
+  public TestContextManager(TestContextBootstrapper testContextBootstrapper) {
+      //构建testContext
+  		this.testContext = testContextBootstrapper.buildTestContext();
+      //注册TestExecutionListeners
+  		registerTestExecutionListeners(testContextBootstrapper.getTestExecutionListeners());
+  	}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">  static BootstrapContext createBootstrapContext(Class&lt;?&gt; testClass) {
+    //负责加载和关闭应用程序上下文
+		CacheAwareContextLoaderDelegate cacheAwareContextLoaderDelegate = createCacheAwareContextLoaderDelegate();
+		Class&lt;? extends BootstrapContext&gt; clazz = null;
+		try {
+			clazz = (Class&lt;? extends BootstrapContext&gt;) ClassUtils.forName(
+					DEFAULT_BOOTSTRAP_CONTEXT_CLASS_NAME, BootstrapUtils.class.getClassLoader());
+			Constructor&lt;? extends BootstrapContext&gt; constructor = clazz.getConstructor(
+					Class.class, CacheAwareContextLoaderDelegate.class);
+			if (logger.isDebugEnabled()) {
+				logger.debug(String.format("Instantiating BootstrapContext using constructor [%s]", constructor));
+			}
+      //加载BootstrapContext
+			return BeanUtils.instantiateClass(constructor, testClass, cacheAwareContextLoaderDelegate);
+		}
+		catch (Throwable ex) {
+			throw new IllegalStateException("Could not load BootstrapContext [" + clazz + "]", ex);
+		}
+	}
+
+  static TestContextBootstrapper resolveTestContextBootstrapper(BootstrapContext bootstrapContext) {
+		Class&lt;?&gt; testClass = bootstrapContext.getTestClass();
+
+		Class&lt;?&gt; clazz = null;
+		try {
+			clazz = resolveExplicitTestContextBootstrapper(testClass);
+			if (clazz == null) {
+				clazz = resolveDefaultTestContextBootstrapper(testClass);
+			}
+			if (logger.isDebugEnabled()) {
+				logger.debug(String.format("Instantiating TestContextBootstrapper for test class [%s] from class [%s]",
+						testClass.getName(), clazz.getName()));
+			}
+      //加载TestContextBootstrapper
+			TestContextBootstrapper testContextBootstrapper =
+					BeanUtils.instantiateClass(clazz, TestContextBootstrapper.class);
+			testContextBootstrapper.setBootstrapContext(bootstrapContext);
+			return testContextBootstrapper;
+		}
+		catch (IllegalStateException ex) {
+			throw ex;
+		}
+		catch (Throwable ex) {
+			throw new IllegalStateException("Could not load TestContextBootstrapper [" + clazz +
+					"]. Specify @BootstrapWith's 'value' attribute or make the default bootstrapper class available.",
+					ex);
+		}
+	}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>言归正传，回到 <code>@BeforeClasses</code> 执行的代码，方法就在 <code>TestContextManager</code> 中</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void beforeTestClass() throws Exception {
+		Class&lt;?&gt; testClass = getTestContext().getTestClass();
+		if (logger.isTraceEnabled()) {
+			logger.trace("beforeTestClass(): class [" + testClass.getName() + "]");
+		}
+		getTestContext().updateState(null, null, null);
+
+		for (TestExecutionListener testExecutionListener : getTestExecutionListeners()) {
+			try {
+        //所有的监听器处理beforeTestClass
+				testExecutionListener.beforeTestClass(getTestContext());
+			}
+			catch (Throwable ex) {
+				logException(ex, "beforeTestClass", testExecutionListener, testClass);
+				ReflectionUtils.rethrowException(ex);
+			}
+		}
+	}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>withAfterClasses</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//@AfterClass 同上@BeforeClass
+@Override
+protected Statement withAfterClasses(Statement statement) {
+  Statement junitAfterClasses = super.withAfterClasses(statement);
+  return new RunAfterTestClassCallbacks(junitAfterClasses, getTestContextManager());
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>createTest</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+protected Object createTest() throws Exception {
+  Object testInstance = super.createTest();
+  getTestContextManager().prepareTestInstance(testInstance);
+  return testInstance;
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public void prepareTestInstance(Object testInstance) throws Exception {
+  if (logger.isTraceEnabled()) {
+    logger.trace("prepareTestInstance(): instance [" + testInstance + "]");
+  }
+  //textContex 设置 testInstance
+  getTestContext().updateState(testInstance, null, null);
+
+  for (TestExecutionListener testExecutionListener : getTestExecutionListeners()) {
+    try {
+      //在测试类实例化后调用监听器prepareTestInstance
+      testExecutionListener.prepareTestInstance(getTestContext());
+    }
+    catch (Throwable ex) {
+      if (logger.isErrorEnabled()) {
+        logger.error("Caught exception while allowing TestExecutionListener [" + testExecutionListener +
+            "] to prepare test instance [" + testInstance + "]", ex);
+      }
+      ReflectionUtils.rethrowException(ex);
+    }
+  }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>runChild</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+protected void runChild(FrameworkMethod frameworkMethod, RunNotifier notifier) {
+  Description description = describeChild(frameworkMethod);
+  if (isTestMethodIgnored(frameworkMethod)) {
+    notifier.fireTestIgnored(description);
+  }
+  else {
+    Statement statement;
+    //对比父类区别就是增加了异常捕获
+    try {
+      statement = methodBlock(frameworkMethod);
+    }
+    catch (Throwable ex) {
+      statement = new Fail(ex);
+    }
+    runLeaf(statement, description, notifier);
+  }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>methodBlock</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+	protected Statement methodBlock(FrameworkMethod frameworkMethod) {
+		Object testInstance;
+		try {
+			testInstance = new ReflectiveCallable() {
+				@Override
+				protected Object runReflectiveCall() throws Throwable {
+          //对比父类没有重写带参重载方法，父类中带参传入后并没有使用
+					return createTest();
+				}
+			}.run();
+		}
+		catch (Throwable ex) {
+			return new Fail(ex);
+		}
+
+		Statement statement = methodInvoker(frameworkMethod, testInstance);
+    //对比父类新增statement调用前加载testcontext且不影响junit默认的操作
+		statement = withBeforeTestExecutionCallbacks(frameworkMethod, testInstance, statement);
+    //对比父类新增statement调用后处理testcontext且不影响junit默认的操作
+		statement = withAfterTestExecutionCallbacks(frameworkMethod, testInstance, statement);
+		statement = possiblyExpectingExceptions(frameworkMethod, testInstance, statement);
+		statement = withBefores(frameworkMethod, testInstance, statement);
+		statement = withAfters(frameworkMethod, testInstance, statement);
+    //处理@Rule
+		statement = withRulesReflectively(frameworkMethod, testInstance, statement);
+    //处理@Repeat
+		statement = withPotentialRepeat(frameworkMethod, testInstance, statement);
+		statement = withPotentialTimeout(frameworkMethod, testInstance, statement);
+		return statement;
+	}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>possiblyExpectingExceptions</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//对比父类异常getExpectedException从方法中获取
+@Override
+protected Statement possiblyExpectingExceptions(FrameworkMethod frameworkMethod, Object testInstance, Statement next) {
+  Class&lt;? extends Throwable&gt; expectedException = getExpectedException(frameworkMethod);
+  return (expectedException != null ? new ExpectException(next, expectedException) : next);
+}
+
+@Nullable
+protected Class&lt;? extends Throwable&gt; getExpectedException(FrameworkMethod frameworkMethod) {
+  Test test = frameworkMethod.getAnnotation(Test.class);
+  return (test != null &amp;&amp; test.expected() != Test.None.class ? test.expected() : null);
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>withPotentialTimeout</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">//对比父类增加了@Timed注解的支持，当然也支持 @Test(timeout=...) ，但两者不能同时使用
+@Override
+	// Retain the following warning suppression for deprecation (even if Eclipse
+	// states it is unnecessary) since withPotentialTimeout(FrameworkMethod,Object,Statement)
+	// in BlockJUnit4ClassRunner has been deprecated.
+	@SuppressWarnings("deprecation")
+	protected Statement withPotentialTimeout(FrameworkMethod frameworkMethod, Object testInstance, Statement next) {
+		Statement statement = null;
+		long springTimeout = getSpringTimeout(frameworkMethod);
+		long junitTimeout = getJUnitTimeout(frameworkMethod);
+		if (springTimeout &gt; 0 &amp;&amp; junitTimeout &gt; 0) {
+			String msg = String.format("Test method [%s] has been configured with Spring's @Timed(millis=%s) and " +
+							"JUnit's @Test(timeout=%s) annotations, but only one declaration of a 'timeout' is " +
+							"permitted per test method.", frameworkMethod.getMethod(), springTimeout, junitTimeout);
+			logger.error(msg);
+			throw new IllegalStateException(msg);
+		}
+		else if (springTimeout &gt; 0) {
+			statement = new SpringFailOnTimeout(next, springTimeout);
+		}
+		else if (junitTimeout &gt; 0) {
+			statement = FailOnTimeout.builder().withTimeout(junitTimeout, TimeUnit.MILLISECONDS).build(next);
+		}
+		else {
+			statement = next;
+		}
+
+		return statement;
+	}
+
+  protected long getJUnitTimeout(FrameworkMethod frameworkMethod) {
+		Test test = frameworkMethod.getAnnotation(Test.class);
+		return (test == null ? 0 : Math.max(0, test.timeout()));
+	}
+
+  protected long getSpringTimeout(FrameworkMethod frameworkMethod) {
+  return TestAnnotationUtils.getTimeout(frameworkMethod.getMethod());
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>withBefores</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+protected Statement withBefores(FrameworkMethod frameworkMethod, Object testInstance, Statement statement) {
+  Statement junitBefores = super.withBefores(frameworkMethod, testInstance, statement);
+  //@Before 同上文 @BeforeClass
+  return new RunBeforeTestMethodCallbacks(junitBefores, testInstance, frameworkMethod.getMethod(), getTestContextManager());
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>withAfters</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Override
+protected Statement withAfters(FrameworkMethod frameworkMethod, Object testInstance, Statement statement) {
+  Statement junitAfters = super.withAfters(frameworkMethod, testInstance, statement);
+  //@After 同上文 @BeforeClass
+  return new RunAfterTestMethodCallbacks(junitAfters, testInstance, frameworkMethod.getMethod(), getTestContextManager());
+}</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="除重写方法以外其他方法">除重写方法以外其他方法</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>除重写方法以外其他方法</p>
+<div class="paragraph">
+<p><code>SpringJUnit4ClassRunner</code> 除重写方法以外还有一些其他方法，上节中也已经阅读过一些，本节就阅读一下剩余的方法</p>
+</div>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>static 语句块</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">static {
+  //断言ClassLoader加载Throwables
+  Assert.state(ClassUtils.isPresent("org.junit.internal.Throwables", SpringJUnit4ClassRunner.class.getClassLoader()),
+      "SpringJUnit4ClassRunner requires JUnit 4.12 or higher.");
+  //找到withRules方法
+  Method method = ReflectionUtils.findMethod(SpringJUnit4ClassRunner.class, "withRules",
+      FrameworkMethod.class, Object.class, Statement.class);
+  //断言成功找到withRules
+  Assert.state(method != null, "SpringJUnit4ClassRunner requires JUnit 4.12 or higher");
+  //令withRules方法可访问,做这个处理是因为这个是父类的私有方法
+  ReflectionUtils.makeAccessible(method);
+  withRulesMethod = method;
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>isTestMethodIgnored</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">protected boolean isTestMethodIgnored(FrameworkMethod frameworkMethod) {
+  Method method = frameworkMethod.getMethod();
+  //增加@IfProfileValue的处理
+  return (method.isAnnotationPresent(Ignore.class) ||
+      !ProfileValueUtils.isTestEnabledInThisEnvironment(method, getTestClass().getJavaClass()));
+}</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="testcontext">testContext</h2>
+<div class="sectionbody">
+
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/18/selenium_PageFactory%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Selenium_pagefactory源码阅读
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/junit/2021/07/27/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_SpringRunner.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>

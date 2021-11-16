@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+        <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Junit用法</title>
+    <meta name="description" content="junit使用，包含常用注解说明、Assert、Suite、Ignore、Parameterized、rules、自定义 rule、Categories、静态导入">
+    <meta name="keywords" content="junit参考指南,  ">
+    <link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_8v3czwksspqlg14i.css">
+    <link rel="canonical" href="/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html">
+    <link rel="alternate" type="application/rss+xml" title="halley.fang 个人博客" href="/feed.xml ">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/coderay.css">
+    <link rel="stylesheet" href="/css/jquery.tocify.css">
+    <link rel="stylesheet" href="/highlight/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/css/main.css " | prepend: site.baseurl }}">
+    <script src="/highlight/highlight.min.js"></script>
+    <script src="/js/vendor/modernizr.js"></script>
+    <script src="/js/vendor/jquery.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/jquery.tocify.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  </head>
+
+  <body>
+    <!-- <div class="my-search-container">
+  <div class="my-search-shade"></div>
+  <div class="my-search-content">
+    <div class="my-search-content-header">
+      <div class="my-search-close">
+        <i class="fa fa-close"></i>
+      </div>
+      <div class="my-search-title">
+        全文搜索
+      </div>
+      <div class="my-search-input">
+        <i class="fa fa-search"></i>
+        <input id="search-input" type="text">
+        <button class="search-button">搜索</button>
+      </div>
+      <div class="my-search-categories">
+        <span class="active">全部</span>
+        
+      </div>
+    </div>
+    <div class="my-search-results">
+      <ul class="my-search-result-container" id="results-container">
+      </ul>
+      <div class="my-search-placeholder active">暂无内容</div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var PAGE_SIZE = 20
+  $(document).ready(function () {
+    $('.my-search-close').click(toggleSearch);
+    $('.my-search-shade').click(toggleSearch);
+    $('.search-button').click(handleSearch);
+    $('.my-search-categories').on('click', 'span', handleCategoryClick)
+    $('.my-search-result-container').on('scroll', handleSearchResultScroll)
+    $('#search-input').on('keydown', function (e) {
+      e.key === 'Enter' && handleSearch()
+    })
+  })
+  function toggleSearch() {
+    $('.my-search-shade').toggleClass('opened');
+    $('.my-search-content').toggleClass('opened');
+    $('body').toggleClass('search-opened');
+    // 关闭搜索框后清空输入内容，并且清掉搜索结果
+    if (!$('body').hasClass('search-opened')) {
+      $('#search-input').val('');
+      $('.my-search-result-container').empty();
+    }
+  }
+  function handleCategoryClick(e) {
+    $(e.target).addClass('active').siblings().removeClass('active');
+    handleSearch(e);
+  }
+  function handleSearch(e, emitedByScroll) {
+    var searchKeyword = $('#search-input').val();
+    if (!searchKeyword.trim()) return
+    !emitedByScroll && $('.my-search-placeholder').addClass('active').text('搜索中...').siblings().removeClass('active');
+    !emitedByScroll && $('.my-search-result-container').empty();
+    var type = $('.my-search-categories span.active').data('category') || 'all';
+    var pageNo = emitedByScroll ? $('.my-search-result-container').data('page') : 1;
+    var analyzer = $('#analyzer').prop('checked');
+    search(searchKeyword, type, pageNo, analyzer);
+  }
+  function handleSearchResultScroll(e) {
+    var scroller = e.target;
+    var scrollTop = scroller.scrollTop;
+    var clientHeight = scroller.clientHeight;
+    var scrollHeight = scroller.scrollHeight;
+    var loadmore = $('.my-search-loadmore.active').length
+    if (scrollTop + clientHeight === scrollHeight && loadmore) {
+      handleSearch(e, true);
+    }
+  }
+  function search(searchKeyword, type, pageNo, analyzer) {
+    // 防止在请求数据的时候重复发送请求
+    if ($('.my-search-result-container.fetching').length) return
+    $('.my-search-result-container').addClass('fetching')
+    $.ajax({
+      type: 'post',
+      url: 'https://{docs}/search',
+      dataType: 'json',
+      data: { content: searchKeyword, type: type, pageSize: PAGE_SIZE, pageNo: pageNo, analyzer: analyzer ? 'ik_max_word' : 'my_whitespace' },
+      success: function (res) {
+        var results = res.results;
+        var data = results.data;
+        var total = data.total
+        var resultArray = data.data;
+        var extraClass = 'active';
+        var nextPageNo = pageNo + 1
+        if (resultArray.length) {
+          var fregment = document.createDocumentFragment();
+          for (var index in resultArray) {
+            var searchResult = resultArray[index];
+            var elementString = getElementString(searchResult);
+            $(fregment).append($(elementString));
+          }
+        } else {
+          $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+          return
+        }
+        $('.my-search-loadmore').remove()
+        if (total <= PAGE_SIZE * pageNo) {
+          extraClass = 'hidden'
+          nextPageNo = pageNo
+        }
+        $(fregment).append($("<li class='my-search-loadmore " + extraClass + "'>加载中...</li>"));
+        $('.my-search-result-container').append(fregment).addClass('active').removeClass('fetching').data('page', nextPageNo).siblings().removeClass('active');
+        if (pageNo === 1) {
+          $('.my-search-result-container').scrollTop(0)
+        }
+      },
+      error: function () {
+        $('.my-search-placeholder').addClass('active').text('暂无内容').siblings().removeClass('active').removeClass('fetching');
+      }
+    })
+  }
+  function getElementString(result) {
+    var elementString = "<li class='my-search-result'><a href=" + result.url + " target='_blank'>";
+    elementString += "<div class='search-result-header'><div class='search-result-title'>" + result.title + "</div> <div class='search-result-type " + result.type + "'>" + result.type + "</div></div>";
+    elementString += "<div class='search-result-content'>" + result.content + "</div>";
+    elementString += "<div class='search-result-breadcrumb'>";
+    for (var index in result.breadcrumbs) {
+      elementString += "<span class='my-breadcrumb-item'>" + result.breadcrumbs[index] + "</span>";
+    }
+    elementString += "<span class='clearfix' /></div></a></li>";
+    return elementString
+  }
+</script>
+ -->
+    <!-- Nav Bar -->
+<nav class="navbar navbar-default my-topbar">
+  <div class="container-fluid my-container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#my-topbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand my-brand" href="/">
+        <img alt="Brand" class="logo" src="/image/my.png">
+        <span>Halley's Blog</span>
+      </a>
+      <span class="fa fa-search icon-search xs visible-xs-block"></span>
+    </div>
+    <div class="collapse navbar-collapse" id="my-topbar-collapse">
+      <!-- <span class="my-topbar-item hidden-xs">
+        <input type="text" placeholder="输入搜索内容" id="topSearch">
+        <span class="fa fa-search  icon-search"></span>
+      </span> -->
+      <ul class="nav navbar-nav">
+        <li>
+            
+            <a href="/">
+            
+                <i class="fa fa-home"></i>Home
+            </a>
+        </li>
+
+        
+            
+            <li>
+                
+                <a href="/archive/">
+                
+                    <i class="fa fa-archive"></i>Archives
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/category/">
+                
+                    <i class="fa fa-th-list"></i>Categories
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+            <li>
+                
+                <a href="/tag/">
+                
+                    <i class="fa fa-tags"></i>Tags
+                </a>
+            </li>
+            
+        
+            
+            <li>
+                
+                <a href="/about/">
+                
+                    <i class="fa fa-heart"></i>About
+                </a>
+            </li>
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- <script>
+  $(document).ready(function() {
+    $('.icon-search').click(toggleSearch)
+    $('#topSearch').keyup(function (e) {
+      var value = e.target.value
+      e.target.value = ''
+      toggleSearch(function () {
+        $('#search-input').focus()
+        $('#search-input').val(value)
+      })
+    })
+    function toggleSearch (callback) {
+      $('.dw-search-shade').toggleClass('opened')
+      $('.dw-search-content').toggleClass('opened')
+      $('body').toggleClass('search-opened')
+      typeof callback === 'function' && callback()
+    }
+</script> -->
+<!-- End Nav -->
+
+        <div class="page clearfix" post>
+    <div class="my-main-content">
+        <h1>Junit用法</h1>
+        <div class="label" style="line-height: 50px;">
+
+            <div class="label-card" style="color: #333;">
+                <i class="fa fa-calendar"></i>2021-07-01
+            </div>
+
+            <div class="label-card" style="color: rebeccapurple;">
+                <i class="fa fa-user"></i>halley.fang
+                
+            </div>
+
+            <div class="label-card">
+                
+            </div>
+
+            <div class="label-card">
+            
+
+
+<!-- <span class="point">•</span> -->
+<span class="categories">
+  <i class="fa fa-th-list"></i>
+  
+    
+        <a href="/category/#guide" title="Category: guide" rel="category">guide</a>
+    
+  
+
+  <!-- <span class="point">•</span> -->
+</span>
+
+
+            </div>
+
+            <div class="label-card">
+            
+<!-- <span class="point">•</span> -->
+<span class="pageTag">
+  <i class="fa fa-tags"></i>
+  
+    
+        <!--a href="/tag/#junit" title="Tag: junit" rel="tag">junit</a-->
+        <a href="/tag/#junit" title="Tag: junit" rel="tag" style="color: blue;">junit</a>&nbsp;
+    
+        <!--a href="/tag/#%E5%8F%82%E8%80%83%E6%8C%87%E5%8D%97" title="Tag: 参考指南" rel="tag">参考指南</a-->
+        <a href="/tag/#参考指南" title="Tag: 参考指南" rel="tag" style="color: blue;">参考指南</a>
+    
+  
+
+</span>
+
+            </div>
+
+        </div>
+        <hr>
+        <article itemscope itemtype="http://schema.org/BlogPosting">
+        <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>junit使用，包含常用注解说明、<code>Assert</code>、<code>Suite</code>、<code>Ignore</code>、<code>Parameterized</code>、<code>rules</code>、自定义 <code>rule</code>、<code>Categories</code>、静态导入</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="定义测试方法">定义测试方法</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>JUnit</code> 使用注解将方法标记为测试方法并配置它们。下表概述了 <code>JUnit</code> 中 <code>4.x</code> 和 <code>5.x</code> 版本中最重要的注释。所有这些注释都可以用于方法。</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. 注解</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">注解</th>
+<th class="tableblock halign-left valign-top">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@Test</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">将方法标识为测试方法</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@Before</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">在每次测试之前执行。它用于准备测试环境（例如，读取输入数据，初始化类）。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@After</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">每次测试后执行。它用于清理测试环境（例如，删除临时数据、恢复默认值）。它还可以通过清理昂贵的内存结构来节省内存。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@BeforeClass</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">在所有测试开始之前执行一次。它用于执行时间密集型活动，例如连接到数据库。使用此注释标记的方法需要定义为static与 JUnit 一起使用。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@AfterClass</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">在所有测试完成后执行一次。它用于执行清理活动，例如，断开与数据库的连接。使用此注释注释的方法需要定义为static与 JUnit 一起使用。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@Ignore 或者 @Ignore("Why disabled")</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">标记应禁用该测试。当底层代码已更改且测试用例尚未调整时，这很有用。或者如果这个测试的执行时间太长而无法包括在内。最佳做法是提供可选说明，说明为什么禁用测试。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@Test (expected = Exception.class)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">如果该方法不抛出指定的异常，则失败。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@Test(timeout=100)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">如果该方法花费的时间超过 100 毫秒，则失败。</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="断言">断言</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>JUnit 提供静态方法来通过Assert类测试某些条件。这些断言语句通常以assert. 它们允许您指定错误消息、预期结果和实际结果。一个断言方法比较通过测试返回预期值实际值。AssertionException如果比较失败，它会抛出一个。</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. 断言</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">assert</th>
+<th class="tableblock halign-left valign-top">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertTrue([message,] boolean condition)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">检查布尔条件是否为真。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertFalse([message,] boolean condition)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">检查布尔条件是否为假。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertEquals([message,] expected, actual)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试两个值是否相同。注意：对于数组，检查引用而不是数组的内容。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertEquals([message,] expected, actual, tolerance)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">测试 float 或 double 值是否匹配。容差是必须相同的小数位数。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertNull([message,] object)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">检查对象是否为空。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertNotNull([message,] object)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">检查对象是否为空。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertSame([message,] expected, actual)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">检查两个变量是否指向同一个对象。</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">assertNotSame([message,] expected, actual)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">检查两个变量是否指向不同的对象。</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="测试套件">测试套件</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>如果您有多个测试类，您可以将它们组合成一个测试套件。运行测试套件会按指定顺序执行该套件中的所有测试类。一个测试套件还可以包含其他测试套件。</p>
+</div>
+<div class="paragraph">
+<p>以下示例代码演示了测试套件的用法。它包含两个测试类（MyClassTest 和 MySecondClassTest）。如果要添加另一个测试类，可以将其添加到@Suite.SuiteClasses语句中。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.vogella.junit.first;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
+
+@RunWith(Suite.class)
+@SuiteClasses({
+        MyClassTest.class,
+        MySecondClassTest.class })
+
+public class AllTests {
+
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="禁用测试">禁用测试</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>@Ignore 注释允许静态忽略测试。或者，您可以使用Assume.assumeFalse或Assume.assumeTrue来定义测试条件。 Assume.assumeFalse如果其条件评估为真，则将测试标记为无效。 Assume.assumeTrue如果条件评估为假，则将测试评估为无效。例如，以下在 Linux 上禁用测试：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Assume.assumeFalse(System.getProperty("os.name").contains("Linux"));</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="参数化测试">参数化测试</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>JUnit 允许您在测试类中使用参数。此类可以包含一个测试方法，并且使用提供的不同参数执行此方法。</p>
+</div>
+<div class="paragraph">
+<p>您可以使用@RunWith(Parameterized.class)注释将测试类标记为参数化测试。</p>
+</div>
+<div class="paragraph">
+<p>这样的测试类必须包含一个用@Parameters注解注解的静态方法。该方法生成并返回一个数组集合。此集合中的每一项都用作测试方法的参数。</p>
+</div>
+<div class="paragraph">
+<p>您可以使用@Parameter公共字段上的注释来获取测试中注入的测试值。</p>
+</div>
+<div class="paragraph">
+<p>以下代码显示了参数化测试的示例。出于本示例的目的，它测试作为内部类包含multiply()的MyClass类的方法。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package testing;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.runners.Parameterized.*;
+
+@RunWith(Parameterized.class)
+public class ParameterizedTestFields {
+
+    // fields used together with @Parameter must be public
+    @Parameter(0)
+    public int m1;
+    @Parameter(1)
+    public int m2;
+    @Parameter(2)
+    public int result;
+
+
+    // creates the test data
+    @Parameters
+    public static Collection&lt;Object[]&gt; data() {
+        Object[][] data = new Object[][] { { 1 , 2, 2 }, { 5, 3, 15 }, { 121, 4, 484 } };
+        return Arrays.asList(data);
+    }
+
+
+    @Test
+    public void testMultiplyException() {
+        MyClass tester = new MyClass();
+        assertEquals("Result", result, tester.multiply(m1, m2));
+    }
+
+
+    // class to be tested
+    class MyClass {
+        public int multiply(int i, int j) {
+            return i *j;
+        }
+    }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>作为使用@Parameter注释的替代方法，您可以使用构造函数来存储每个测试的值。用注解的方法提供的每个数组中的元素数量 @Parameters 必须与类的构造函数中的参数数量相对应。为每个参数创建类，测试值通过构造函数传递给类。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.vogella.junit.first;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+@RunWith(Parameterized.class)
+public class ParameterizedTestUsingConstructor {
+
+    private int m1;
+    private int m2;
+
+    public ParameterizedTestUsingConstructor(int p1, int p2) {
+        m1 = p1;
+        m2 = p2;
+    }
+
+    // creates the test data
+    @Parameters
+    public static Collection&lt;Object[]&gt; data() {
+        Object[][] data = new Object[][] { { 1 , 2 }, { 5, 3 }, { 121, 4 } };
+        return Arrays.asList(data);
+    }
+
+
+    @Test
+    public void testMultiplyException() {
+        MyClass tester = new MyClass();
+        assertEquals("Result", m1 * m2, tester.multiply(m1, m2));
+    }
+
+
+    // class to be tested
+    class MyClass {
+        public int multiply(int i, int j) {
+            return i *j;
+        }
+    }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>如果您运行此测试类，则会使用每个定义的参数执行测试方法。在上面的例子中，测试方法被执行了 3 次。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="rules">rules</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>通过 JUnit 规则，您可以向测试类中的每个测试添加行为。您可以标注类型的字段TestRule与@Rule注释。您可以创建可以在测试方法中使用和配置的对象。这为您的测试增加了更多的灵活性。例如，您可以指定在执行测试代码期间期望的异常消息。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.vogella.junit.first;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+public class RuleExceptionTesterExample {
+
+  @Rule
+  public ExpectedException exception = ExpectedException.none();
+
+  @Test
+  public void throwsIllegalArgumentExceptionIfIconIsNull() {
+    exception.expect(IllegalArgumentException.class);
+    exception.expectMessage("Negative value not allowed");
+    ClassToBeTested t = new ClassToBeTested();
+    t.methodToBeTest(-1);
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>JUnit 已经提供了几个有用的规则实现。例如，TemporaryFolder该类允许设置在每次测试运行后自动删除的文件和文件夹。</p>
+</div>
+<div class="paragraph">
+<p>以下代码显示了该TemporaryFolder实现的使用示例。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.vogella.junit.first;
+
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.IOException;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+public class RuleTester {
+
+  @Rule
+  public TemporaryFolder folder = new TemporaryFolder();
+
+  @Test
+  public void testUsingTempFolder() throws IOException {
+    File createdFolder = folder.newFolder("newfolder");
+    File createdFile = folder.newFile("myfilefile.txt");
+    assertTrue(createdFile.exists());
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>有关现有规则的更多示例，请参阅 <a href="https://github.com/junit-team/junit4/wiki/Rules">Junit4 Rules</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="编写自定义rule">编写自定义rule</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>要编写自定义规则，您需要实现TestRule接口。此接口定义apply(Statement, Description)必须返回 的实例的方法Statement。Statement 表示 JUnit 运行时中的测试，而 Statement#evaluate() 运行这些测试。描述描述了单个测试。它允许通过反射读取有关测试的信息。</p>
+</div>
+<div class="paragraph">
+<p>下面是一个简单的例子，用于在测试执行前后向 Android 应用程序添加日志语句。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package testing.android.vogella.com.asynctask;
+
+
+import android.util.Log;
+
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+
+public class MyCustomRule implements TestRule {
+    private Statement base;
+    private Description description;
+
+    @Override
+    public Statement apply(Statement base, Description description) {
+        this.base = base;
+        this.description = description;
+        return new MyStatement(base);
+    }
+
+    public class MyStatement extends Statement {
+        private final Statement base;
+
+        public MyStatement(Statement base) {
+            this.base = base;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            System.
+            Log.w("MyCustomRule",description.getMethodName() + "Started" );
+            try {
+                base.evaluate();
+            } finally {
+                Log.w("MyCustomRule",description.getMethodName() + "Finished");
+            }
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>要使用此规则，只需@Rule在您的测试类中添加一个注释字段即可。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Rule
+public MyCustomRule myRule = new MyCustomRule();</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="categories_类别">Categories 类别</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>可以定义测试类别并根据注释包含或排除它们。以下示例基于 <a href="https://github.com/junit-team/junit4/blob/main/doc/ReleaseNotes4.8.md">JUnit 4.8 发行说明</a> 。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface FastTests { /* category marker */
+}
+
+public interface SlowTests { /* category marker */
+}
+
+public class A {
+    @Test
+    public void a() {
+        fail();
+    }
+
+    @Category(SlowTests.class)
+    @Test
+    public void b() {
+    }
+}
+
+@Category({ SlowTests.class, FastTests.class })
+public class B {
+    @Test
+    public void c() {
+    }
+}
+
+@RunWith(Categories.class)
+@IncludeCategory(SlowTests.class)
+@SuiteClasses({ A.class, B.class })
+// Note that Categories is a kind of Suite
+public class SlowTestSuite {
+    // Will run A.b and B.c, but not A.a
+}
+
+@RunWith(Categories.class)
+@IncludeCategory(SlowTests.class)
+@ExcludeCategory(FastTests.class)
+@SuiteClasses({ A.class, B.class })
+// Note that Categories is a kind of Suite
+public class SlowTestSuite {
+    // Will run A.b, but not A.a or B.c
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="静态导入">静态导入</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>静态导入是一种特性，它允许在public static不指定定义字段的类的情况下使用类中定义的字段和方法。</p>
+</div>
+<div class="paragraph">
+<p>JUnit 断言语句通常被定义为public static允许开发人员编写简短的测试语句。以下代码段演示了带有和不带有静态导入的 assert 语句。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">// without static imports you have to write the following statement
+Assert.assertEquals("10 x 5 must be 50", 50, tester.multiply(10, 5));
+
+
+// alternatively define assertEquals as static import
+import static org.junit.Assert.assertEquals;
+
+// more code
+
+// use assertEquals directly because of the static import
+assertEquals("10 x 5 must be 50", 50, tester.multiply(10, 5));</code></pre>
+</div>
+</div>
+</div>
+</div>
+        </article>
+        <hr>
+
+        
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <h2 id="similar_posts">Similar Posts</h2>
+                        <ul>
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/15/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_BlockJUnit4ClassRunner.html">Junit源码阅读_blockjunit4classrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/appium/2021/05/25/appium%E7%A7%BB%E5%8A%A8%E7%AB%AF%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.html">Appium移动端自动化测试指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/selenium/2021/05/12/selenium%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97.html">Selenium使用指南
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+        
+            
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                
+            
+                
+                    
+                
+                    
+                        
+                        <li class="relatedPost">
+                            <a href="/guide/2020/12/03/Junit+Mockito+PowerMock%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E5%88%9D%E6%8E%A2.html">Junit+mockito+powermock单元测试初探
+                            
+                            </a>
+                        </li>
+                        
+                        
+                    
+                
+            
+        
+        
+            </ul>
+        
+
+        <div class="post-recent">
+    <div class="pre">
+        
+        <p><strong>上一篇</strong> <a href="/testng/2021/06/27/testng%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB.html">Testng源码阅读</a></p>
+        
+    </div>
+    <div class="nex">
+
+        
+        <p><strong>下一篇</strong> <a href="/junit/2021/07/06/junit%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB_textui_TestRunner.html">Junit源码阅读_textui_testrunner</a></p>
+        
+    </div>
+</div>
+
+
+        <h2 id="comments">Comments</h2>
+        
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function() {
+        this.page.url = '/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html'; // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = '/guide/2021/07/01/junit%E7%94%A8%E6%B3%95.html'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document,
+            s = d.createElement('script');
+
+        s.src = '//HalleyFang.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+    </div>
+    <button class="anchor"><i class="fa fa-anchor"></i></button>
+    <div class="my-sidebar">
+        <div class="wrap">
+          <div class="side">
+            <div id="tocify" class="dw-toc">
+              <div class="dw-toc-header">Table of contents</div>
+            </div>
+          </div>
+            <!-- Content -->
+            <!--<div class="side content">
+                <ul id="content-side" class="content-ul">
+                    
+                    <li><a href="#similar_posts">Similar Posts</a></li>
+                    
+                    <li><a href="#comments">Comments</a></li>
+                </ul>
+            </div>-->
+        </div>
+    </div>
+</div>
+<script>
+/**
+ * target _blank
+ */
+(function() {
+    var aTags = document.querySelectorAll('article a:not([id])')
+    for (var i = 0; i < aTags.length; i++) {
+        aTags[i].setAttribute('target', '_blank')
+    }
+}());
+</script>
+<script src="/js/pageContent.js " charset="utf-8"></script>
+<script>
+  $( document ).ready(function() {
+    if ($('#toc')) {
+      $('#toc').remove()
+    }
+      // Handler for .ready() called.
+    $('#tocify').tocify({
+      selectors: 'h2,h3,h4,h5',
+      extendPage: false
+    });
+
+    /* this offset helps account for the space taken up by the floating toolbar. */
+    $('#toc').on('click', 'a', function() {
+      var target = $(this.getAttribute('href'))
+        , scroll_target = target.offset().top
+
+      $(window).scrollTop(scroll_target - 10);
+      return false
+    })
+
+  });
+</script>
+
+    <footer class="my-footer">
+
+    <div class="my-wrapper">
+
+        <p class="description">
+            
+        </p>
+        <p class="contact">
+            Contact me at: 
+            <a href="https://github.com/HalleyFang" title="GitHub"><i class="fa fa-github" aria-hidden="true"></i></a>
+            
+            
+            <a href="mailto:qingyeliufeng@163.com" title="email"><i class="fa fa-envelope-o" aria-hidden="true"></i></a>
+            
+            
+            <a href="http://wpa.qq.com/msgrd?v=3&uin=458930591&site=qq&menu=yes" target="_blank" class="qq_tell"><i class="fa fa-qq" aria-hidden="true"></i></a>
+            
+        </p>
+        <p class="power">
+            <span>
+                Site powered by <a href="https://jekyllrb.com/">Jekyll</a> & <a href="https://pages.github.com/">Github Pages</a>.
+            </span>
+            <span>
+                Theme designed by <a href="https://github.com/HalleyFang">halley.fang</a>.
+            </span>
+        </p>
+    </div>
+</footer>
+
+    <div class="back-to-top">
+    <a href="#top" data-scroll>
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
+    </a>
+</div>
+
+    <script src=" /js/main.js " charset="utf-8"></script>
+    <script src=" /js/smooth-scroll.min.js " charset="utf-8"></script>
+    <script type="text/javascript">
+      smoothScroll.init({
+        speed: 500, // Integer. How fast to complete the scroll in milliseconds
+        easing: 'easeInOutCubic', // Easing pattern to use
+        offset: 20, // Integer. How far to offset the scrolling anchor location in pixels
+      });
+    </script>
+    <script>hljs.initHighlighting()</script>
+  </body>
+
+</html>
